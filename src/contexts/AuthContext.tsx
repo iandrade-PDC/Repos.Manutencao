@@ -7,6 +7,7 @@ interface User {
   role: 'admin' | 'leader' | 'user';
   email: string;
   avatar?: string;
+  approved: boolean; // New field
 }
 
 interface AuthContextType {

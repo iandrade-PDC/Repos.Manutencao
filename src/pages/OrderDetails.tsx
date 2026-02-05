@@ -1,8 +1,9 @@
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, MapPin, User, Calendar, Clock, MessageSquare, CheckCircle2, Package, ImageIcon } from 'lucide-react';
+import { ArrowLeft, MapPin, User, Calendar, Clock, MessageSquare, CheckCircle2, Package, ImageIcon, Trash2 } from 'lucide-react';
 import { cn, formatOrderId } from '../lib/utils';
 import { useMemo, useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase'; // Import Supabase
 
 import { useOrders } from '../contexts/OrdersContext';
 
@@ -10,13 +11,12 @@ export function OrderDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { canEditDemands } = useAuth();
-  const { orders, loading } = useOrders();
+  const { canEditDemands, canManageUsers } = useAuth(); // Add canManageUsers (Admin check)
+  const { orders, loading, fetchOrders } = useOrders(); // Add fetchOrders to refresh after delete
   
   const foundOrder = useMemo(() => orders.find(o => o.id === id), [orders, id]);
 
-  // Local state to handle optimistic updates or if we want to edit locally before save (though this view is mostly read-only)
-  // We initialize with foundOrder if available.
+  // ... (keep state)
   const [order, setOrder] = useState<any>(null);
 
   useEffect(() => {
@@ -25,14 +25,14 @@ export function OrderDetails() {
     }
   }, [foundOrder]);
 
-  // Check for updates from ResolveOrder page
+  // ... (keep update effect)
   useEffect(() => {
     if (location.state?.updatedOrder) {
+      // ... (keep logic)
       const { status, resolution } = location.state.updatedOrder;
       
       setOrder((prev: any) => {
         if (!prev) return prev;
-        // Prevent duplicate history entries if strict mode runs twice
         if (prev.status === 'concluido') return prev;
 
         return {
@@ -48,12 +48,35 @@ export function OrderDetails() {
               details: resolution,
               iconBg: 'bg-mata'
             },
-            ...prev.history, // Newest first
+            ...prev.history, 
           ]
         };
       });
     }
   }, [location.state]);
+
+  const handleDeleteOrder = async () => {
+    if (!id) return;
+    
+    if (confirm('TEM CERTEZA? Esta ação não pode ser desfeita. A ordem será excluída permanentemente.')) {
+      try {
+        const { error } = await supabase
+          .from('orders')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+
+        alert('Ordem excluída com sucesso.');
+        fetchOrders(); // Refresh global list
+        navigate('/orders');
+      } catch (err: any) {
+        console.error('Erro ao excluir:', err);
+        alert('Erro ao excluir ordem: ' + err.message);
+      }
+    }
+  };
+
 
   if (loading) {
      return <div className="p-8 text-center text-slate-500">Carregando detalhes...</div>;
@@ -244,15 +267,16 @@ export function OrderDetails() {
                {order.status === 'concluido' ? 'Ordem Resolvida' : 'Resolver Ordem'}
              </button>
              
-             {/* Print Button (Optional but kept for completeness if needed) */}
-             {/* 
-             <button 
-                className="w-full bg-white hover:bg-slate-50 text-slate-700 font-medium py-2 px-4 rounded-md border border-slate-200 shadow-sm transition-colors flex items-center justify-center gap-2"
-              >
-                <Printer size={18} />
-                Imprimir Ordem
-              </button>
-              */}
+             {/* Delete Button (Admins only) */}
+             {canManageUsers() && (
+                <button 
+                   onClick={handleDeleteOrder}
+                   className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-medium py-2 px-4 rounded-md border border-red-200 shadow-sm transition-colors flex items-center justify-center gap-2 mt-4"
+                >
+                   <Trash2 size={16} />
+                   Excluir Ordem
+                </button>
+             )}
           </div>
         </div>
 

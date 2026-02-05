@@ -11,6 +11,7 @@ interface Profile {
   role: 'admin' | 'leader' | 'user';
   avatar_url?: string;
   sector?: string;
+  approved?: boolean;
 }
 
 export function UserManagement() {
@@ -34,7 +35,15 @@ export function UserManagement() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setUsers(data || []);
+      
+      // Sort: Pending users first
+      const sortedUsers = (data || []).sort((a: any, b: any) => {
+         if (a.approved === false && b.approved !== false) return -1;
+         if (a.approved !== false && b.approved === false) return 1;
+         return 0;
+      });
+      
+      setUsers(sortedUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -56,6 +65,22 @@ export function UserManagement() {
     } catch (error) {
       console.error('Error updating profile:', error);
       alert('Erro ao atualizar perfil');
+    }
+  };
+
+  const handleApproveUser = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ approved: true })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      setUsers(users.map(u => u.id === userId ? { ...u, approved: true } : u));
+    } catch (error) {
+       console.error('Error approving user:', error);
+       alert('Erro ao aprovar usuário');
     }
   };
 
@@ -198,11 +223,29 @@ export function UserManagement() {
                         </select>
                       </div>
                     ) : (
-                      getRoleBadge(user.role)
+                      <div className="flex flex-col gap-1">
+                        {getRoleBadge(user.role)}
+                        {user.approved === false && (
+                           <span className="text-[10px] uppercase font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 w-fit">
+                             Pendente
+                           </span>
+                        )}
+                      </div>
                     )}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
+                       {/* Approval Button */}
+                       {user.approved === false && (
+                          <button 
+                             onClick={() => handleApproveUser(user.id)}
+                             className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors mr-2"
+                             title="Aprovar Acesso"
+                          >
+                             <Check size={12} /> Aprovar
+                          </button>
+                       )}
+
                        {editingId === user.id ? (
                          <>
                            <button 
