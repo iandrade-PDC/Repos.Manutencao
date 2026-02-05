@@ -46,7 +46,7 @@ export function Login() {
     <div className="min-h-screen bg-areia flex items-center justify-center p-4">
       <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-white/20">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-marinho">MANUTENÇÃO<span className="font-light">SYS</span></h1>
+          <h1 className="text-3xl font-bold text-marinho">Ancoradouro<span className="font-light"> da Ponta</span></h1>
           <p className="text-marinho/60 mt-2">
             {isSignUp ? 'Crie sua conta' : 'Faça login para continuar'}
           </p>
