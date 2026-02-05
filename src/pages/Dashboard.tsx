@@ -41,18 +41,16 @@ export function Dashboard() {
     
     // Initialize map with all dates in range to ensure continuous line
     const today = new Date();
-    let daysToGenerate = periodFilter === 'week' ? 7 : (periodFilter === 'month' ? 30 : 30); 
-    // If month, we technically should generate from 1st to today.
-    // For simplicity, let's stick to generating based on filter duration.
     
-    // Better approach: Determine start date based on filter
+    // Determine start date based on filter
     let startDate = new Date();
     if (periodFilter === 'week') startDate.setDate(today.getDate() - 6);
     else if (periodFilter === 'month') startDate = new Date(today.getFullYear(), today.getMonth(), 1);
     else startDate.setDate(today.getDate() - 29);
 
     // Iteration to fill generic dates
-    for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
+    const initialDate = new Date(startDate);
+    for (let d = initialDate; d <= today; d.setDate(d.getDate() + 1)) {
         const dateStr = d.toISOString().split('T')[0]; // YYYY-MM-DD
         // Format for display (DD/MM)
         const displayDate = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
@@ -92,7 +90,7 @@ export function Dashboard() {
        }
     });
 
-    return Object.values(dataMap).sort((a,b) => {
+    return Object.values(dataMap).sort(() => {
         // Sort by date logic is a bit tricky with 'DD/MM' display format. 
         // But we inserted keys chronologically YYYY-MM-DD, so Object.values might preserve it? 
         // No, key order not guaranteed.

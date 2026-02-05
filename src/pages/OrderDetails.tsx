@@ -1,5 +1,5 @@
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, MapPin, User, Calendar, Clock, MessageSquare, CheckCircle2, Package, ImageIcon, Printer } from 'lucide-react';
+import { ArrowLeft, MapPin, User, Calendar, Clock, MessageSquare, CheckCircle2, Package, ImageIcon } from 'lucide-react';
 import { cn, formatOrderId } from '../lib/utils';
 import { useMemo, useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
@@ -112,7 +112,7 @@ export function OrderDetails() {
             </div>
 
             <div className="flex flex-wrap gap-4 mt-6">
-              {order.photos.map((photo, i) => (
+              {order.photos.map((photo: string, i: number) => (
                 <div key={i} className="relative w-32 h-32 rounded-lg overflow-hidden border border-slate-200 group">
                   <img src={photo} alt="Evidência" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                 </div>
@@ -126,7 +126,7 @@ export function OrderDetails() {
             <div className="relative pl-4 border-l-2 border-slate-100 space-y-8">
               
               {/* Map through history */}
-              {order.history.map((item, index) => (
+              {order.history.map((item: any, index: number) => (
                 <div key={index} className="relative animate-in slide-in-from-left-2 duration-500">
                   <div className={cn("absolute -left-[21px] top-0 w-3 h-3 rounded-full ring-4 ring-white", item.iconBg || 'bg-slate-300')} />
                   
