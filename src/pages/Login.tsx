@@ -21,6 +21,12 @@ export function Login() {
       setError('');
       setLoading(true);
 
+      // Check for valid configuration before attempting login
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl || supabaseUrl.includes('placeholder')) {
+        throw new Error('CONFIGURAÇÃO PENDENTE: Configure as variáveis de ambiente (URL do Supabase) no painel da Vercel.');
+      }
+
       if (isSignUp) {
         await signUp(email, password, name, sector);
         // Auto login or show success message? Supabase usually logs in automatically after sign up unless validation is required.
