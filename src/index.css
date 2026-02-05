@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Main Background - Areia #e7e4dd */
+    --background: 43 14% 88%;
+    /* Main Text - Marinho Darkened for contrast */
+    --foreground: 210 44% 15%; 
+
+    /* Cards - White for contrast against Areia */
+    --card: 0 0% 100%;
+    --card-foreground: 210 44% 25%; /* Marinho text on cards */
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 44% 25%;
+ 
+    /* Primary - Marinho #23405b */
+    --primary: 210 44% 25%;
+    --primary-foreground: 43 14% 88%; /* Areia text on Marinho */
+ 
+    /* Secondary - Palha #b88455 */
+    --secondary: 29 42% 53%;
+    --secondary-foreground: 210 44% 25%; 
+ 
+    /* Muted - Soft Areia or Grey */
+    --muted: 43 14% 93%;
+    --muted-foreground: 210 20% 40%;
+ 
+    /* Accent - Rosa #eea89f */
+    --accent: 7 66% 78%;
+    --accent-foreground: 210 44% 25%;
+ 
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 210 20% 85%;
+    --input: 210 20% 85%;
+    --ring: 210 44% 25%; /* Marinho ring */
+ 
+    --radius: 0.5rem;
+  }
+ 
+  .dark {
+    --background: 210 44% 10%; /* Dark Marinho */
+    --foreground: 43 14% 88%; /* Areia text */
+ 
+    --card: 210 44% 15%;
+    --card-foreground: 43 14% 88%;
+ 
+    --popover: 210 44% 15%;
+    --popover-foreground: 43 14% 88%;
+ 
+    --primary: 210 44% 25%; /* Marinho (maybe lighten for dark mode?) */
+    --primary-foreground: 43 14% 88%;
+ 
+    --secondary: 29 42% 53%; /* Palha */
+    --secondary-foreground: 210 44% 10%;
+ 
+    --muted: 210 44% 20%;
+    --muted-foreground: 215 20% 65%;
+ 
+    --accent: 7 66% 78%; /* Rosa */
+    --accent-foreground: 210 44% 10%;
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 43 14% 88%;
+ 
+    --border: 210 44% 20%;
+    --input: 210 44% 20%;
+    --ring: 29 42% 53%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

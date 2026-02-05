@@ -1,0 +1,19 @@
+
+> app-manutencao@0.0.0 build
+> tsc -b && vite build
+
+src/components/common/NotificationDropdown.tsx(2,31): error TS6133: 'X' is declared but its value is never read.
+src/components/common/NotificationDropdown.tsx(3,28): error TS1484: 'Notification' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/common/NotificationDropdown.tsx(3,28): error TS6133: 'Notification' is declared but its value is never read.
+src/components/OrderPdfDocument.tsx(2,50): error TS6133: 'Image' is declared but its value is never read.
+src/components/OrderPdfDocument.tsx(2,57): error TS6133: 'Font' is declared but its value is never read.
+src/contexts/NotificationContext.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/contexts/NotificationContext.tsx(1,54): error TS1484: 'ReactNode' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/layouts/Layout.tsx(3,83): error TS6133: 'Bell' is declared but its value is never read.
+src/lib/supabase.ts(2,30): error TS2307: Cannot find module '@supabase/supabase-js' or its corresponding type declarations.
+src/pages/OrderDetails.tsx(4,10): error TS6133: 'useMemo' is declared but its value is never read.
+src/pages/OrderDetails.tsx(46,13): error TS2367: This comparison appears to be unintentional because the types '"aberto"' and '"concluido"' have no overlap.
+src/pages/Ranking.tsx(2,10): error TS6133: 'BarChart3' is declared but its value is never read.
+src/pages/Ranking.tsx(2,54): error TS6133: 'ArrowUpRight' is declared but its value is never read.
+src/pages/Ranking.tsx(2,68): error TS6133: 'ArrowDownRight' is declared but its value is never read.
+src/pages/Ranking.tsx(86,28): error TS6133: 'i' is declared but its value is never read.
