@@ -50,6 +50,9 @@ export function Login() {
           <p className="text-marinho/60 mt-2">
             {isSignUp ? 'Crie sua conta' : 'Faça login para continuar'}
           </p>
+          <div className="mt-4 text-xs text-slate-400 bg-slate-50 inline-block px-2 py-1 rounded">
+             v1.0.5 - Atualizado
+          </div>
         </div>
 
         {error && (
