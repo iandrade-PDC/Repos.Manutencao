@@ -249,7 +249,7 @@ export function Orders() {
                 </div>
             )}
         </div>
-      </div>
+
         
         {/* Pagination Footer (Static) */}
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
