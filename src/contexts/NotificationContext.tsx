@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
 export interface Notification {
@@ -45,6 +45,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
   const saveToStorage = (newNotifications: Notification[]) => {
     setNotifications(newNotifications);
     localStorage.setItem('notifications', JSON.stringify(newNotifications));
@@ -58,6 +64,48 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       ...data
     };
     saveToStorage([newNotification, ...notifications]);
+
+    // Play Sound
+    try {
+        playNotificationSound();
+    } catch (e) {
+        console.error('Error playing sound:', e);
+    }
+
+    // System Notification
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(data.title, {
+            body: data.message,
+            icon: '/logo.png', // Assuming logo exists
+            badge: '/logo.png'
+        });
+    }
+  };
+
+  const playNotificationSound = () => {
+    try {
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContext) return;
+        
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(500, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1000, ctx.currentTime + 0.1);
+        
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+    } catch (e) {
+        console.error('AudioContext error:', e);
+    }
   };
 
   const markAsRead = (id: string) => {
