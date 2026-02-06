@@ -1,5 +1,5 @@
 
-import { useState, FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { User, Mail, Phone, MapPin, Camera, Save } from 'lucide-react';
 

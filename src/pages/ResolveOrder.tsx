@@ -1,4 +1,4 @@
-import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
+import { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Upload, X, Calendar, Clock, User, Package, MessageSquare, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
