@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { User, Mail, Phone, MapPin, Camera, Save } from 'lucide-react';
 
@@ -18,7 +18,7 @@ export function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
     
