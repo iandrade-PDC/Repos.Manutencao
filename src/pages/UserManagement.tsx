@@ -62,9 +62,9 @@ export function UserManagement() {
 
       setUsers(users.map(u => u.id === userId ? { ...u, role: newRole, sector: newSector } : u));
       setEditingId(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
-      alert('Erro ao atualizar perfil');
+      alert('Erro ao atualizar perfil: ' + (error.message || 'Erro desconhecido'));
     }
   };
 
@@ -78,9 +78,9 @@ export function UserManagement() {
       if (error) throw error;
 
       setUsers(users.map(u => u.id === userId ? { ...u, approved: true } : u));
-    } catch (error) {
+    } catch (error: any) {
        console.error('Error approving user:', error);
-       alert('Erro ao aprovar usuário');
+       alert('Erro ao aprovar usuário: ' + (error.message || 'Erro desconhecido'));
     }
   };
 
