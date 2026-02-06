@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Camera, Send, X, AlertTriangle } from 'lucide-react';
+import { Camera, Send, X, AlertTriangle, CalendarDays, Clock, MapPin, User, Type, ArrowLeft } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { LOCATION_DATA, PRIORITIES } from '../data/locations';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
-
 import { useOrders } from '../contexts/OrdersContext';
-import { ArrowLeft } from 'lucide-react';
 
 export function NewOrder() {
   const navigate = useNavigate();
@@ -107,105 +105,145 @@ export function NewOrder() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-      <div className="flex items-center gap-4">
+    <div className="max-w-2xl mx-auto space-y-4 animate-in fade-in slide-in-from-right-4 duration-300 pb-20 md:pb-0">
+      
+      {/* Header */}
+      <div className="flex items-center gap-4 pt-2">
         <button 
           onClick={() => navigate('/')}
-          className="p-2 rounded-full hover:bg-slate-200 text-slate-600 transition-colors"
+          className="p-2 -ml-2 rounded-full hover:bg-slate-100/50 text-slate-600 transition-colors md:hidden"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size={24} />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-marinho">Nova Solicitação</h1>
-          <p className="text-slate-500">Preencha os dados abaixo para abrir um chamado.</p>
+          <h1 className="text-xl md:text-2xl font-bold text-marinho">Nova Solicitação</h1>
+          <p className="text-xs md:text-sm text-slate-500">Preencha os dados abaixo para abrir um chamado.</p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg p-6 shadow-sm border border-slate-200 space-y-6">
+      <form onSubmit={handleSubmit} className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-slate-100 space-y-6">
         
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Data</label>
-            <input 
-              type="date" 
-              required
-              className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-marinho focus:border-transparent bg-slate-50 text-slate-600"
-              value={formData.date}
-              onChange={e => setFormData({...formData, date: e.target.value})}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Horário</label>
-            <input 
-              type="time" 
-              required
-              className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-marinho focus:border-transparent bg-slate-50 text-slate-600"
-              value={formData.time}
-              onChange={e => setFormData({...formData, time: e.target.value})}
-            />
-          </div>
+        {/* Basic Info Section */}
+        <div className="space-y-4">
+            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Informações Básicas</h2>
+            
+            <div className="grid grid-cols-2 gap-4">
+                <div className="relative group">
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5 ml-1">Data</label>
+                    <div className="relative">
+                        <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-marinho transition-colors" size={18} />
+                        <input 
+                        type="date" 
+                        required
+                        className="w-full pl-10 pr-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-marinho/20 focus:border-marinho transition-all text-sm text-slate-700 font-medium"
+                        value={formData.date}
+                        onChange={e => setFormData({...formData, date: e.target.value})}
+                        />
+                    </div>
+                </div>
+                <div className="relative group">
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5 ml-1">Horário</label>
+                    <div className="relative">
+                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-marinho transition-colors" size={18} />
+                        <input 
+                        type="time" 
+                        required
+                        className="w-full pl-10 pr-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-marinho/20 focus:border-marinho transition-all text-sm text-slate-700 font-medium"
+                        value={formData.time}
+                        onChange={e => setFormData({...formData, time: e.target.value})}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <div className="relative">
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5 ml-1">Solicitante</label>
+                <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                        type="text" 
+                        disabled
+                        className="w-full pl-10 pr-3 py-2.5 bg-slate-100/80 border border-slate-200 rounded-lg text-slate-500 font-medium text-sm focus:outline-none cursor-not-allowed"
+                        value={formData.requester}
+                    />
+                </div>
+            </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Solicitante</label>
-          <input 
-            type="text" 
-            disabled
-            className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-marinho focus:border-transparent bg-slate-100 text-slate-500"
-            value={formData.requester}
-            readOnly
-          />
+        <div className="h-px bg-slate-100" />
+
+        {/* Location Section */}
+        <div className="space-y-4">
+             <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Localização</h2>
+             
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative group">
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5 ml-1">Local Principal</label>
+                    <div className="relative">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-marinho transition-colors" size={18} />
+                        <select 
+                        required
+                        className="w-full pl-10 pr-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-marinho/20 focus:border-marinho transition-all text-sm appearance-none text-slate-700"
+                        value={formData.location}
+                        onChange={e => setFormData({...formData, location: e.target.value})}
+                        >
+                        <option value="">Selecione o local...</option>
+                        {Object.keys(LOCATION_DATA).map(loc => (
+                            <option key={loc} value={loc}>{loc}</option>
+                        ))}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none border-l pl-2 border-slate-200">
+                             <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="relative group">
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5 ml-1">Setor / Ambiente</label>
+                    <div className="relative">
+                        {/* We reuse MapPin or another icon like 'DoorOpen' if available, staying with MapPin for consistency or none */}
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-slate-300 group-focus-within:border-marinho transition-colors" />
+                        <select
+                        required
+                        disabled={!formData.location}
+                        className="w-full pl-10 pr-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-marinho/20 focus:border-marinho transition-all text-sm appearance-none disabled:bg-slate-100 disabled:text-slate-400 text-slate-700"
+                        value={formData.sector}
+                        onChange={e => setFormData({...formData, sector: e.target.value})}
+                        >
+                        <option value="">{formData.location ? "Selecione o ambiente..." : "Primeiro selecione o local"}</option>
+                        {availableSectors.map(sector => (
+                            <option key={sector} value={sector}>{sector}</option>
+                        ))}
+                        </select>
+                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none border-l pl-2 border-slate-200">
+                             <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Local</label>
-            <select 
-              required
-              className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-marinho focus:border-transparent"
-              value={formData.location}
-              onChange={e => setFormData({...formData, location: e.target.value})}
-            >
-              <option value="">Selecione...</option>
-              {Object.keys(LOCATION_DATA).map(loc => (
-                  <option key={loc} value={loc}>{loc}</option>
-              ))}
-            </select>
+        {/* Details Section */}
+        <div className="pt-2">
+          <div className="flex items-center gap-2 mb-4">
+             <div className="p-1.5 rounded-md bg-blue-50 text-blue-600">
+                <AlertTriangle size={18} />
+             </div>
+             <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
+                Detalhes da Ocorrência
+             </h2>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Setor / Ambiente Específico</label>
-            <select
-               required
-               disabled={!formData.location}
-               className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-marinho focus:border-transparent disabled:bg-slate-100 disabled:text-slate-400"
-               value={formData.sector}
-               onChange={e => setFormData({...formData, sector: e.target.value})}
-            >
-              <option value="">{formData.location ? "Selecione o setor..." : "Primeiro selecione a localização"}</option>
-              {availableSectors.map(sector => (
-                <option key={sector} value={sector}>{sector}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Section: Details */}
-        <div className="pt-4 border-t border-slate-100 space-y-6">
-          <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-            <AlertTriangle size={16} className="text-blue-600" />
-            Detalhes da Ocorrência
-          </h2>
           
           <div className="space-y-6">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600">Prioridade</label>
-              <div className="flex gap-2">
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-600 ml-1">Nível de Prioridade</label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {PRIORITIES.map((p) => (
                   <label key={p.value} className={cn(
-                    "flex-1 text-center py-2 px-3 rounded-md border text-sm cursor-pointer transition-all select-none",
+                    "relative flex flex-col items-center justify-center py-3 px-2 rounded-xl border-2 cursor-pointer transition-all duration-200 select-none",
                     formData.priority === p.value
-                      ? cn(p.color, "border-transparent ring-2 ring-offset-1 ring-blue-500 font-bold")
-                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                      ? cn(p.color.replace('text-', 'bg-').replace('800', '50').replace('700', '50').replace('600', '50'), "border-blue-500 shadow-sm") // Custom active bg logic or simple override
+                      : "bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50 text-slate-500"
                   )}>
                     <input 
                       type="radio" 
@@ -215,44 +253,55 @@ export function NewOrder() {
                       checked={formData.priority === p.value}
                       onChange={() => setFormData({...formData, priority: p.value})}
                     />
-                    {p.label}
+                    <span className={cn(
+                        "text-sm font-bold capitalize",
+                        formData.priority === p.value ? "text-blue-700" : "text-slate-600"
+                    )}>{p.label}</span>
+                    {formData.priority === p.value && (
+                        <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                    )}
                   </label>
                 ))}
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600">Título / Resumo</label>
-              <input
-                type="text"
-                required
-                className="w-full px-3 py-2 rounded-md border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ex: Vazamento na pia, Lâmpada queimada..."
-                value={formData.title}
-                onChange={e => setFormData({...formData, title: e.target.value})}
-              />
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-600 ml-1">Título do Problema</label>
+              <div className="relative group">
+                  <Type className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-marinho transition-colors" size={18} />
+                  <input
+                    type="text"
+                    required
+                    className="w-full pl-10 pr-3 py-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-marinho/20 focus:border-marinho transition-all"
+                    placeholder="Ex: Ar condicionado pingando, Tomada em curto..."
+                    value={formData.title}
+                    onChange={e => setFormData({...formData, title: e.target.value})}
+                  />
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600">Observação / Descrição Detalhada</label>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-600 ml-1">Descrição Detalhada</label>
               <textarea
                 required
                 rows={4}
-                className="w-full px-3 py-2 rounded-md border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                placeholder="Descreva o problema com o máximo de detalhes possível..."
+                className="w-full px-4 py-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-marinho/20 focus:border-marinho resize-none transition-all placeholder:text-slate-400"
+                placeholder="Descreva o problema com detalhes..."
                 value={formData.description}
                 onChange={e => setFormData({...formData, description: e.target.value})}
               />
             </div>
 
-          <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-600 block">Evidência (Foto Única)</label>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-600 block ml-1">Evidência (Foto)</label>
               
               {!photo ? (
-                <label className="w-full h-48 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 cursor-pointer hover:border-marinho hover:text-marinho hover:bg-areia/20 transition-all bg-slate-50">
-                  <Camera size={32} />
-                  <span className="text-sm font-bold mt-2">Adicionar Foto</span>
-                  <span className="text-xs mt-1">Clique para tirar foto ou fazer upload</span>
+                <label className="w-full h-40 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 cursor-pointer hover:border-marinho hover:text-marinho hover:bg-marinho/5 transition-all bg-slate-50 group">
+                  <div className="p-3 rounded-full bg-white shadow-sm mb-2 group-hover:scale-110 transition-transform">
+                     <Camera size={24} className="text-marinho" />
+                  </div>
+                  <span className="text-sm font-bold text-slate-600">Adicionar Foto</span>
+                  <span className="text-xs mt-1 text-slate-400">Toque para capturar</span>
                   <input 
                     type="file" 
                     accept="image/*" 
@@ -262,41 +311,50 @@ export function NewOrder() {
                   />
                 </label>
               ) : (
-                <div className="relative w-full h-64 rounded-lg overflow-hidden border border-slate-200 group bg-black/5">
+                <div className="relative w-full h-56 rounded-xl overflow-hidden border border-slate-200 group bg-black">
                   <img 
                     src={URL.createObjectURL(photo)} 
                     alt="Preview" 
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain opacity-90"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
                   <button
                     type="button"
                     onClick={() => setPhoto(null)}
-                    className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full shadow-md hover:bg-red-600 transition-colors"
+                    className="absolute top-3 right-3 bg-white/90 text-red-500 p-2 rounded-full shadow-lg hover:bg-white transition-all active:scale-95"
                   >
                     <X size={20} />
                   </button>
+                  <div className="absolute bottom-3 left-3 text-white text-xs font-medium px-2 py-1 bg-black/50 rounded-md backdrop-blur-sm">
+                    Foto anexada
+                  </div>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
+        {/* Actions - Sticky on Mobile? No, just clearly separated */}
+        <div className="pt-6 mt-6 border-t border-slate-100 flex flex-col-reverse md:flex-row justify-end gap-3">
           <button
             type="button"
             onClick={() => navigate('/')}
-            className="px-4 py-2 rounded-md border border-slate-300 text-slate-700 hover:bg-white text-sm font-medium transition-colors"
+            className="w-full md:w-auto px-4 py-3 md:py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-semibold transition-colors disabled:opacity-50"
+            disabled={isSubmitting}
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="bg-marinho text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-marinho/90 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full md:w-auto bg-marinho text-white px-6 py-3 md:py-2.5 rounded-lg font-bold hover:bg-marinho/90 transition-all shadow-lg shadow-marinho/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed active:scale-95"
           >
-            <Send size={18} />
-            {isSubmitting ? 'Enviando...' : 'Registrar Solicitação'}
+            {isSubmitting ? (
+                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+                <Send size={18} />
+            )}
+            {isSubmitting ? 'Registrando...' : 'Confirmar Solicitação'}
           </button>
         </div>
       </form>

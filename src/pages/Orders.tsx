@@ -139,9 +139,11 @@ export function Orders() {
         </div>
       </div>
 
-      {/* Orders Table */}
+      {/* Orders List */}
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-        <div className="overflow-x-auto">
+        
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider text-xs">
               <tr>
@@ -207,6 +209,47 @@ export function Orders() {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden divide-y divide-slate-100">
+            {filteredOrders.length > 0 ? (
+                filteredOrders.map((order) => (
+                    <Link to={`/orders/${order.id}`} key={order.id} className="block p-4 hover:bg-slate-50 transition-colors">
+                        <div className="flex justify-between items-start mb-2">
+                            <div>
+                                <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded border mb-1 inline-block uppercase tracking-wider", getPriorityBadge(order.priority))}>
+                                    {order.priority}
+                                </span>
+                                <h3 className="font-semibold text-slate-800 text-sm line-clamp-1">{order.title}</h3>
+                            </div>
+                            {getStatusBadge(order.status)}
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-y-2 text-xs text-slate-500 mt-3">
+                            <div className="flex items-center gap-1.5">
+                                <Calendar size={12} className="text-slate-400" />
+                                {new Date(order.date).toLocaleDateString('pt-BR')}
+                            </div>
+                            <div className="flex items-center gap-1.5 justify-end">
+                                <span className="font-mono text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
+                                    {order.short_id ? formatOrderId(order.short_id) : order.id.substring(0,6)}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 col-span-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                                {order.location} <span className="text-slate-300">•</span> {order.sector}
+                            </div>
+                        </div>
+                    </Link>
+                ))
+            ) : (
+                <div className="p-8 text-center text-slate-500 bg-slate-50">
+                    <Filter size={24} className="mx-auto text-slate-300 mb-2" />
+                    <p className="text-sm">Nenhum resultado.</p>
+                </div>
+            )}
+        </div>
+      </div>
         
         {/* Pagination Footer (Static) */}
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
