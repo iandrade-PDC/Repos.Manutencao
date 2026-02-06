@@ -126,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const canManageUsers = () => user?.role === 'admin';
-  const canEditDemands = () => user?.role === 'admin' || user?.role === 'leader';
+  const canEditDemands = () => user?.role === 'admin' || user?.role === 'leader' || user?.sector === 'Manutenção';
 
   return (
     <AuthContext.Provider value={{ user, loading, login, signUp, logout, canManageUsers, canEditDemands }}>
