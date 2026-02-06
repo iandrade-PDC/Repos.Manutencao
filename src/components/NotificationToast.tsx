@@ -12,9 +12,11 @@ export function NotificationToast() {
     // Actually, we can just look at the latest notification.
     if (notifications.length > 0) {
         const latest = notifications[0];
-        // Check if it's recent (e.g. within 2 seconds) to avoid showing old ones on reload
+        // Check if it's recent (e.g. within 20 seconds) - Increased for safety
         const timeDiff = new Date().getTime() - new Date(latest.time).getTime();
-        if (timeDiff < 5000 && !latest.read) { // 5 seconds threshold
+        console.log('Last notification age:', timeDiff, latest);
+        
+        if (timeDiff < 20000 && !latest.read) { 
            showToast(latest);
         }
     }

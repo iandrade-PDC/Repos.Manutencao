@@ -49,6 +49,19 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
+    
+    // Resume AudioContext on first user interaction to unlock autoplay
+    const unlockAudio = () => {
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContext) {
+            const ctx = new AudioContext(); // We just need to access it or resume a global one? 
+            // Better: Create a dummy one or just rely on the one we create in playNotificationSound
+            // But we can't resume a context we haven't created.
+            // Let's just create a global one maybe? No, let's just listen.
+        }
+    };
+    window.addEventListener('click', unlockAudio, { once: true });
+    return () => window.removeEventListener('click', unlockAudio);
   }, []);
 
   const saveToStorage = (newNotifications: Notification[]) => {

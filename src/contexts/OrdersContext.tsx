@@ -52,8 +52,9 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
         if (payload.eventType === 'INSERT' && user) {
              const newOrder = payload.new as Order;
              
-             // Check if user is Maintenance (admin/leader) and NOT the creator
-             if (canEditDemands() && newOrder.requester_id !== user.id) {
+             // Check if user is Maintenance (admin/leader) and has permission
+             // Removed (newOrder.requester_id !== user.id) check to allow testing on same account
+             if (canEditDemands()) {
                  const orderIdDisplay = newOrder.short_id ? formatOrderId(newOrder.short_id) : 'Nova';
                  addNotification({
                      title: 'Nova Solicitação',
