@@ -7,7 +7,8 @@ interface User {
   role: 'admin' | 'leader' | 'user';
   email: string;
   avatar?: string;
-  approved: boolean; // New field
+  approved: boolean; 
+  sector?: string; // Add sector field
 }
 
 interface AuthContextType {

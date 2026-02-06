@@ -31,6 +31,7 @@ interface OrdersContextType {
   loading: boolean;
   addOrder: (data: NewOrderData) => Promise<void>;
   updateOrder: (id: string, updates: Partial<Order>) => Promise<void>;
+  fetchOrders: () => Promise<void>;
 }
 
 const OrdersContext = createContext<OrdersContextType | undefined>(undefined);
@@ -182,7 +183,7 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <OrdersContext.Provider value={{ orders, loading, addOrder, updateOrder }}>
+    <OrdersContext.Provider value={{ orders, loading, addOrder, updateOrder, fetchOrders }}>
       {children}
     </OrdersContext.Provider>
   );

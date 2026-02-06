@@ -2,7 +2,7 @@
 import { StatCard } from '../components/dashboard/StatCard';
 import { RankingList } from '../components/dashboard/RankingList';
 import { ActivityChart } from '../components/dashboard/ActivityChart';
-import { AlertCircle, CheckCircle2, Clock, RotateCcw } from 'lucide-react';
+import { AlertCircle, CheckCircle2, RotateCcw } from 'lucide-react';
 import { useOrders } from '../contexts/OrdersContext';
 import { useMemo, useState } from 'react';
 
@@ -108,7 +108,7 @@ export function Dashboard() {
   const stats = useMemo(() => {
     const total = filteredOrders.length;
     const open = filteredOrders.filter(o => o.status === 'aberto').length;
-    const inProgress = filteredOrders.filter(o => o.status === 'em_andamento').length;
+    // const inProgress = filteredOrders.filter(o => o.status === 'em_andamento').length; // Unused
     const completed = filteredOrders.filter(o => o.status === 'concluido').length;
 
     return [
