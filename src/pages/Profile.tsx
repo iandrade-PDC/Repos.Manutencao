@@ -6,22 +6,49 @@ import { User, Mail, Phone, MapPin, Camera, Save } from 'lucide-react';
 export function Profile() {
   const { user } = useAuth();
   
-  // Mock state for profile editing (in a real app, this would update the backend)
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    phone: '(11) 98765-4321',
+    phone: '(11) 98765-4321', // Example placeholder, usually stored in profiles if needed
     role: user?.role || 'user',
-    department: 'Manutenção',
+    department: user?.sector || '', // Mapped to 'Cargo' input
     location: 'Sede Administrativa'
   });
 
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsEditing(false);
-    alert('Perfil atualizado com sucesso! (Simulação)');
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      // Only update fields that exist in profiles table
+      const updates: any = {
+        full_name: formData.name,
+        // Update sector only if user is admin (or logic permits, UI allows it if isEditing is true)
+        // Since we enabled the input for admin, we should save it.
+        sector: formData.department
+      };
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      alert('Perfil atualizado com sucesso!');
+      setIsEditing(false);
+      // Optional: Force reload or re-fetch profile context (easiest is page reload for now or expose refreshProfile)
+      window.location.reload(); 
+    } catch (error: any) {
+      console.error(error);
+      alert('Erro ao atualizar: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -102,13 +129,23 @@ export function Profile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Cargo</label>
-                  <input 
-                    type="text" 
-                    value={formData.department}
-                    disabled={!isEditing}
-                    className="w-full px-3 py-2 rounded-md border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
-                  />
+                  <label className="text-sm font-medium text-slate-700">Cargo / Setor</label>
+                  <select
+                     value={formData.department}
+                     onChange={(e) => setFormData({...formData, department: e.target.value})}
+                     disabled={!isEditing || user?.role !== 'admin'} // Only admin can edit their own sector/role effectively usually, but here we let them
+                     className="w-full px-3 py-2 rounded-md border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
+                  >
+                     <option value="">Selecione...</option>
+                     <option value="Manutenção">Manutenção</option>
+                     <option value="Recepção">Recepção</option>
+                     <option value="Governança">Governança</option>
+                     <option value="Cozinha">Cozinha</option>
+                     <option value="Restaurante">Restaurante</option>
+                     <option value="Administração">Administração</option>
+                     <option value="Jardinagem">Jardinagem</option>
+                     <option value="Outro">Outro</option>
+                  </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700">Email</label>
@@ -135,10 +172,11 @@ export function Profile() {
                 <div className="pt-4 flex justify-end">
                   <button 
                     type="submit"
-                    className="bg-marinho hover:bg-marinho/90 text-white px-4 py-2 rounded-md font-medium flex items-center gap-2 transition-colors"
+                    disabled={loading}
+                    className="bg-marinho hover:bg-marinho/90 text-white px-4 py-2 rounded-md font-medium flex items-center gap-2 transition-colors disabled:opacity-50"
                   >
                     <Save size={18} />
-                    Salvar Alterações
+                    {loading ? 'Salvando...' : 'Salvar Alterações'}
                   </button>
                 </div>
               )}

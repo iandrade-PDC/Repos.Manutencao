@@ -114,8 +114,7 @@ export function Dashboard() {
     return [
       { label: 'Total de Ordens', value: total.toString(), icon: RotateCcw, color: 'blue' as const, description: 'No período' },
       { label: 'Em Aberto', value: open.toString(), icon: AlertCircle, color: 'orange' as const, description: 'Aguardando' },
-      { label: 'Em Andamento', value: inProgress.toString(), icon: Clock, color: 'blue' as const, description: 'Em execução' },
-      { label: 'Concluídas', value: completed.toString(), icon: CheckCircle2, color: 'green' as const, description: 'Finalizadas' },
+      { label: 'Concluídas', value: completed.toString(), icon: CheckCircle2, color: 'green' as const, description: 'Finais' },
     ];
   }, [filteredOrders]);
 

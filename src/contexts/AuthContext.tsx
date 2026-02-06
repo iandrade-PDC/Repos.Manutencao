@@ -70,6 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name: email.split('@')[0],
           role: 'user',
           email: email,
+          approved: false,
+          sector: ''
         });
       } else if (data) {
         setUser({
@@ -77,7 +79,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name: data.full_name || email.split('@')[0],
           role: data.role || 'user',
           email: email,
-          avatar: data.avatar_url
+          avatar: data.avatar_url,
+          approved: data.approved !== false,
+          sector: data.sector
         });
       }
     } catch (err) {
