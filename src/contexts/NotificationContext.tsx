@@ -67,6 +67,13 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     // Play Sound
     try {
+        const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'); 
+        // Use a better base64 for a noticeable beep "Ding"
+        // This is a short sine beep encoded
+        const beepUrl = "data:audio/wav;base64,UklGRn4AAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YWoAAAB/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgIA=";
+        // Real Base64 for a "Ding" sound (approx):
+        // Since I can't upload a file, I will stick to AudioContext but FIX it to run on interaction or try this standard beep data URI. 
+        // If AudioContext fails, this fallback needs to be good. But let's trust AudioContext improvement only.
         playNotificationSound();
     } catch (e) {
         console.error('Error playing sound:', e);
@@ -88,17 +95,24 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         if (!AudioContext) return;
         
         const ctx = new AudioContext();
+        
+        // Resume context if suspended (common in browsers)
+        if (ctx.state === 'suspended') {
+             ctx.resume();
+        }
+
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
 
         osc.connect(gain);
         gain.connect(ctx.destination);
 
+        // A pleasant "Ding" sound: Sine wave, high pitch to lower, short decay
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(500, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1000, ctx.currentTime + 0.1);
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.15);
         
-        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
 
         osc.start();

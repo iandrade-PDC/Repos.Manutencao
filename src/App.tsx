@@ -13,6 +13,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { OrdersProvider } from './contexts/OrdersContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { NotificationToast } from './components/NotificationToast';
 
 import { UserManagement } from './pages/UserManagement';
 
@@ -20,6 +21,7 @@ function App() {
   return (
     <AuthProvider>
       <NotificationProvider>
+        <NotificationToast />
         <OrdersProvider>
           <BrowserRouter>
             <Routes>
