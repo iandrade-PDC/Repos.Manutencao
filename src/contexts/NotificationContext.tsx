@@ -67,10 +67,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     // Play Sound
     try {
-        const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'); 
         // Use a better base64 for a noticeable beep "Ding"
         // This is a short sine beep encoded
-        const beepUrl = "data:audio/wav;base64,UklGRn4AAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YWoAAAB/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgH9/f4CAgIA=";
         // Real Base64 for a "Ding" sound (approx):
         // Since I can't upload a file, I will stick to AudioContext but FIX it to run on interaction or try this standard beep data URI. 
         // If AudioContext fails, this fallback needs to be good. But let's trust AudioContext improvement only.

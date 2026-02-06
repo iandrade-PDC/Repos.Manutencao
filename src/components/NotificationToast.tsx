@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNotifications } from '../contexts/NotificationContext';
-import { X, Bell, CheckCircle, AlertTriangle, Info } from 'lucide-react';
+import { X, CheckCircle, AlertTriangle, Info } from 'lucide-react';
 
 export function NotificationToast() {
   const { notifications } = useNotifications();
