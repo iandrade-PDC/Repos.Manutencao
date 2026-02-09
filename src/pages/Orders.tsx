@@ -76,7 +76,7 @@ export function Orders() {
           <h1 className="text-2xl font-bold text-marinho">Lista de Solicitações</h1>
           <p className="text-sm text-marinho/60">Gerencie e acompanhe todas as ordens de manutenção.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2">
            <button className="bg-white border border-marinho/20 text-marinho px-4 py-2 rounded-md text-sm font-medium hover:bg-areia/50 transition-colors shadow-sm">
             Exportar CSV
            </button>
@@ -91,7 +91,7 @@ export function Orders() {
       <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-4">
         
         {/* Search */}
-        <div className="relative">
+        <div className="relative col-span-1 md:col-span-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input
             type="text"
@@ -104,7 +104,7 @@ export function Orders() {
 
         {/* Priority Filter */}
         <select
-          className="w-full px-3 py-2 rounded-md border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          className="hidden md:block w-full px-3 py-2 rounded-md border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
           value={filters.priority}
           onChange={e => setFilters({...filters, priority: e.target.value})}
         >
@@ -117,7 +117,7 @@ export function Orders() {
 
         {/* Status Filter (Replaces Sector) */}
         <select
-          className="w-full px-3 py-2 rounded-md border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          className="hidden md:block w-full px-3 py-2 rounded-md border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
           value={filters.status}
           onChange={e => setFilters({...filters, status: e.target.value})}
         >
@@ -128,7 +128,7 @@ export function Orders() {
         </select>
 
         {/* Date Filter */}
-        <div className="relative">
+        <div className="hidden md:block relative">
           <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input
             type="date"

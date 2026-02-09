@@ -157,16 +157,16 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 rounded-lg shadow-sm border border-slate-200 gap-4 md:gap-0">
         <div>
           <h1 className="text-xl font-bold text-slate-800">Visão Geral</h1>
           <p className="text-sm text-slate-500">Monitoramento em tempo real</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full md:w-auto">
           <select 
             value={periodFilter}
             onChange={(e) => setPeriodFilter(e.target.value)}
-            className="bg-white border border-marinho/20 text-marinho text-sm rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-marinho/20 transition-all cursor-pointer hover:border-marinho/50"
+            className="flex-1 md:flex-none bg-white border border-marinho/20 text-marinho text-sm rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-marinho/20 transition-all cursor-pointer hover:border-marinho/50"
           >
             <option value="geral">Geral (30 dias)</option>
             <option value="month">Este Mês</option>

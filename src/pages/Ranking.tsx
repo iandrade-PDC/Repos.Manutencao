@@ -197,148 +197,161 @@ export function Ranking() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       
-      {/* Header & Filter */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-marinho">Relatórios e Rankings</h1>
-          <p className="text-sm text-slate-500">Métricas de desempenho filtradas por período.</p>
+      {/* Mobile Only Placeholder */}
+      <div className="md:hidden flex flex-col items-center justify-center p-12 text-center bg-white rounded-lg border border-slate-200 shadow-sm mt-4">
+        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-400">
+            <TrendingUp size={32} />
         </div>
-
-        {/* Date Filter Inputs */}
-        <div className="bg-white p-2 rounded-lg border border-slate-200 flex items-center gap-2 shadow-sm">
-          <Calendar size={18} className="text-slate-400 ml-2" />
-          <div className="flex items-center gap-2">
-            <input 
-              type="date" 
-              className="text-sm border-none focus:ring-0 text-slate-600 outline-none"
-              value={dateRange.start}
-              onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-            />
-            <span className="text-slate-300">até</span>
-            <input 
-              type="date" 
-              className="text-sm border-none focus:ring-0 text-slate-600 outline-none"
-              value={dateRange.end}
-              onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-            />
-          </div>
-        </div>
+        <h2 className="text-lg font-bold text-slate-800 mb-2">Visualização Web</h2>
+        <p className="text-slate-500 text-sm max-w-xs">
+            Os relatórios detalhados e rankings estão disponíveis apenas na versão desktop para melhor visualização dos dados.
+        </p>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {stats.map((stat, i) => (
-          <div key={i} className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-start justify-between">
+      {/* Desktop Content */}
+      <div className="hidden md:block space-y-6">
+        {/* Header & Filter */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{stat.label}</p>
-              <h3 className="text-2xl font-bold text-slate-800 mt-1">{stat.value}</h3>
-              <div className={cn("flex items-center gap-1 text-xs font-medium mt-1", 
-                stat.trend === 'good' ? "text-green-600" : stat.trend === 'bad' ? "text-red-600" : "text-slate-500"
-              )}>
-                {stat.subtext}
-              </div>
+            <h1 className="text-2xl font-bold text-marinho">Relatórios e Rankings</h1>
+            <p className="text-sm text-slate-500">Métricas de desempenho filtradas por período.</p>
             </div>
-            <div className="p-2 bg-slate-50 rounded-lg text-slate-400">
-              <stat.icon size={20} />
-            </div>
-          </div>
-        ))}
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Top Locations Chart */}
-        <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <MapPin size={20} className="text-blue-600" />
-            Locais com Mais Chamados
-          </h2>
-          <div className="space-y-6">
-            {topLocations.length > 0 ? topLocations.map((loc, i) => (
-              <div key={i} className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="font-semibold text-slate-700">{loc.name}</span>
-                  <span className="text-slate-500">{loc.count} chamados ({loc.percent}%)</span>
-                </div>
-                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-blue-600 rounded-full transition-all duration-1000" 
-                    style={{ width: `${loc.percent}%` }}
-                  />
-                </div>
-              </div>
-            )) : (
-              <p className="text-sm text-slate-400 text-center py-8">Nenhum dado neste período.</p>
-            )}
-          </div>
+            {/* Date Filter Inputs */}
+            <div className="bg-white p-2 rounded-lg border border-slate-200 flex items-center gap-2 shadow-sm">
+            <Calendar size={18} className="text-slate-400 ml-2" />
+            <div className="flex items-center gap-2">
+                <input 
+                type="date" 
+                className="text-sm border-none focus:ring-0 text-slate-600 outline-none"
+                value={dateRange.start}
+                onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                />
+                <span className="text-slate-300">até</span>
+                <input 
+                type="date" 
+                className="text-sm border-none focus:ring-0 text-slate-600 outline-none"
+                value={dateRange.end}
+                onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                />
+            </div>
+            </div>
         </div>
 
-        {/* Top Requesters List */}
-        <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <User size={20} className="text-blue-600" />
-            Top Solicitantes
-          </h2>
-          <div className="divide-y divide-slate-100">
-            {topRequesters.length > 0 ? topRequesters.map((user, i) => (
-              <div key={i} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
-                <div className="relative">
-                  <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full bg-slate-200 object-cover" />
-                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center text-[10px] font-bold text-yellow-900 border-2 border-white shadow-sm">
-                    #{i + 1}
-                  </div>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {stats.map((stat, i) => (
+            <div key={i} className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-start justify-between">
+                <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{stat.label}</p>
+                <h3 className="text-2xl font-bold text-slate-800 mt-1">{stat.value}</h3>
+                <div className={cn("flex items-center gap-1 text-xs font-medium mt-1", 
+                    stat.trend === 'good' ? "text-green-600" : stat.trend === 'bad' ? "text-red-600" : "text-slate-500"
+                )}>
+                    {stat.subtext}
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-bold text-slate-800">{user.name}</h3>
-                  <p className="text-xs text-slate-500">{user.role}</p>
                 </div>
-                <div className="text-right">
-                  <span className="block text-lg font-bold text-slate-800">{user.count}</span>
-                  <span className="text-[10px] text-slate-400 uppercase">Solicitações</span>
+                <div className="p-2 bg-slate-50 rounded-lg text-slate-400">
+                <stat.icon size={20} />
                 </div>
-              </div>
-            )) : (
-              <p className="text-sm text-slate-400 text-center py-8">Nenhum dado neste período.</p>
-            )}
-          </div>
+            </div>
+            ))}
         </div>
 
-      </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* Top Locations Chart */}
+            <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <MapPin size={20} className="text-blue-600" />
+                Locais com Mais Chamados
+            </h2>
+            <div className="space-y-6">
+                {topLocations.length > 0 ? topLocations.map((loc, i) => (
+                <div key={i} className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                    <span className="font-semibold text-slate-700">{loc.name}</span>
+                    <span className="text-slate-500">{loc.count} chamados ({loc.percent}%)</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div 
+                        className="h-full bg-blue-600 rounded-full transition-all duration-1000" 
+                        style={{ width: `${loc.percent}%` }}
+                    />
+                    </div>
+                </div>
+                )) : (
+                <p className="text-sm text-slate-400 text-center py-8">Nenhum dado neste período.</p>
+                )}
+            </div>
+            </div>
 
-      {/* Technician Performance (Real Data) */}
-      <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-           <Trophy size={20} className="text-yellow-500" />
-           Desempenho da Equipe Técnica
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 text-slate-500 uppercase font-semibold">
-              <tr>
-                <th className="px-4 py-3 rounded-l-md">Técnico</th>
-                <th className="px-4 py-3">Chamados Resolvidos</th>
-                <th className="px-4 py-3 rounded-r-md">Tempo Médio (em breve)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {techPerformance.length > 0 ? techPerformance.map((tech, i) => (
-                <tr key={i}>
-                  <td className="px-4 py-3 font-medium text-slate-800">{tech.name}</td>
-                  <td className="px-4 py-3">{tech.resolved}</td>
-                  <td className="px-4 py-3 text-slate-400">{tech.avgTime}</td>
+            {/* Top Requesters List */}
+            <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <User size={20} className="text-blue-600" />
+                Top Solicitantes
+            </h2>
+            <div className="divide-y divide-slate-100">
+                {topRequesters.length > 0 ? topRequesters.map((user, i) => (
+                <div key={i} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
+                    <div className="relative">
+                    <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full bg-slate-200 object-cover" />
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center text-[10px] font-bold text-yellow-900 border-2 border-white shadow-sm">
+                        #{i + 1}
+                    </div>
+                    </div>
+                    <div className="flex-1">
+                    <h3 className="text-sm font-bold text-slate-800">{user.name}</h3>
+                    <p className="text-xs text-slate-500">{user.role}</p>
+                    </div>
+                    <div className="text-right">
+                    <span className="block text-lg font-bold text-slate-800">{user.count}</span>
+                    <span className="text-[10px] text-slate-400 uppercase">Solicitações</span>
+                    </div>
+                </div>
+                )) : (
+                <p className="text-sm text-slate-400 text-center py-8">Nenhum dado neste período.</p>
+                )}
+            </div>
+            </div>
+
+        </div>
+
+        {/* Technician Performance (Real Data) */}
+        <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+            <Trophy size={20} className="text-yellow-500" />
+            Desempenho da Equipe Técnica
+            </h2>
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+                <thead className="bg-slate-50 text-slate-500 uppercase font-semibold">
+                <tr>
+                    <th className="px-4 py-3 rounded-l-md">Técnico</th>
+                    <th className="px-4 py-3">Chamados Resolvidos</th>
+                    <th className="px-4 py-3 rounded-r-md">Tempo Médio (em breve)</th>
                 </tr>
-              )) : (
-                 <tr>
-                    <td colSpan={3} className="px-4 py-8 text-center text-slate-400">
-                        Nenhum chamado resolvido encontrado no período.
-                    </td>
-                 </tr>
-              )}
-            </tbody>
-          </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                {techPerformance.length > 0 ? techPerformance.map((tech, i) => (
+                    <tr key={i}>
+                    <td className="px-4 py-3 font-medium text-slate-800">{tech.name}</td>
+                    <td className="px-4 py-3">{tech.resolved}</td>
+                    <td className="px-4 py-3 text-slate-400">{tech.avgTime}</td>
+                    </tr>
+                )) : (
+                    <tr>
+                        <td colSpan={3} className="px-4 py-8 text-center text-slate-400">
+                            Nenhum chamado resolvido encontrado no período.
+                        </td>
+                    </tr>
+                )}
+                </tbody>
+            </table>
+            </div>
         </div>
       </div>
-
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Lock, User, AlertCircle } from 'lucide-react';
@@ -12,8 +12,15 @@ export function Login() {
   
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, signUp } = useAuth();
+  const { login, signUp, user } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect when user state is active
+  useEffect(() => {
+    if (user) {
+        navigate('/');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +45,7 @@ export function Login() {
         setIsSignUp(false);
       } else {
         await login(email, password);
-        navigate('/');
+        // Do NOT navigate here. Let the useEffect handle it when state updates.
       }
     } catch (err: any) {
       console.error(err);
@@ -52,7 +59,7 @@ export function Login() {
     <div className="min-h-screen bg-areia flex items-center justify-center p-4">
       <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-white/20">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-marinho">Ancoradouro<span className="font-light"> da Ponta</span></h1>
+          <h1 className="text-3xl font-bold text-marinho">Ancoradouro da Ponta</h1>
           <p className="text-marinho/60 mt-2">
             {isSignUp ? 'Crie sua conta' : 'Faça login para continuar'}
           </p>
