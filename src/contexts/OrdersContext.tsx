@@ -2,25 +2,44 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import { supabase } from '../lib/supabase';
 import { uploadOrderPhoto } from '../lib/utils';
 import { useAuth } from './AuthContext';
-// useNotifications removed as it's no longer used here
 
 export interface Order {
   id: string;
-// ... (lines 8-36 omitted, implied context is fine if I match correct range)
-// Actually I need to match the start of the file for imports.
-// I will target imports specifically.
+  short_id?: number;
+  title: string;
+  description: string;
+  requester: string;
+  requester_id?: string;
+  date: string;
+  time: string;
+  location: string;
+  sector: string;
+  priority: 'baixa' | 'media' | 'alta' | 'urgente';
+  status: 'aberto' | 'em_andamento' | 'concluido';
+  photos: string[];
+  history: any[];
+  created_at?: string;
+}
 
-// I will target lines 1-6
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
-import { uploadOrderPhoto } from '../lib/utils';
-import { useAuth } from './AuthContext';
+interface NewOrderData extends Omit<Order, 'id' | 'status' | 'history' | 'photos' | 'short_id' | 'created_at'> {
+  photos: File[];
+}
 
-// ...
-// Target useAuth and useNotifications lines
+interface OrdersContextType {
+  orders: Order[];
+  loading: boolean;
+  addOrder: (data: NewOrderData) => Promise<void>;
+  updateOrder: (id: string, updates: Partial<Order>) => Promise<void>;
+  fetchOrders: () => Promise<void>;
+}
+
+const OrdersContext = createContext<OrdersContextType | undefined>(undefined);
+
+export function OrdersProvider({ children }: { children: ReactNode }) {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  // useNotifications removed
-
+  
   useEffect(() => {
     fetchOrders();
 
