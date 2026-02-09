@@ -1,5 +1,7 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from './AuthContext';
 
 export interface Notification {
   id: string;
@@ -17,11 +19,13 @@ interface NotificationContextType {
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   clearAll: () => void;
+  playNotificationSound: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>(() => {
     const saved = localStorage.getItem('notifications');
     if (saved) {
@@ -39,9 +43,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     ];
   });
 
-  // Save to localStorage whenever notifications change
-  // We use a useEffect or modify helpers directly. useEffect is cleaner.
-  // importing useEffect at top first.
+  // Audio Context Ref to avoid multiple contexts limit
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -50,68 +53,84 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       Notification.requestPermission();
     }
     
-    // Resume AudioContext on first user interaction to unlock autoplay
+    // Unlock Audio on interaction
     const unlockAudio = () => {
-        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-        if (AudioContext) {
-            // Just accessing the constructor or creating a dummy context 
-            // can sometimes help, but without using it, linter flags it.
-            // We'll trust playNotificationSound handles the context creation/resume.
-            // But if we really needed to pre-warm, we'd need to store this ctx.
-            // For now, let's just remove the unused var to fix the build.
-            new AudioContext().resume(); 
+        const AudioCtor = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioCtor && !audioContextRef.current) {
+            audioContextRef.current = new AudioCtor();
+        }
+        if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+            audioContextRef.current.resume();
         }
     };
     window.addEventListener('click', unlockAudio, { once: true });
-    return () => window.removeEventListener('click', unlockAudio);
+    window.addEventListener('touchstart', unlockAudio, { once: true }); // Better for mobile
+
+    return () => {
+        window.removeEventListener('click', unlockAudio);
+        window.removeEventListener('touchstart', unlockAudio);
+        if (audioContextRef.current) {
+            audioContextRef.current.close().catch(() => {});
+            audioContextRef.current = null;
+        }
+    };
   }, []);
+
+  // Realtime Subscription for Maintenance Sector
+  useEffect(() => {
+    if (!user) return;
+
+    // Check if user is relevant for notifications (Maintenance, Admin, Leader)
+    const isMaintenance = user.sector === 'Manutenção' || user.role === 'admin' || user.role === 'leader';
+    
+    if (!isMaintenance) return;
+
+    console.log('Setup Realtime Notifications for:', user.email);
+
+    const channel = supabase
+      .channel('global-notifications')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
+          const newOrder = payload.new;
+          
+          // Debug payload
+          console.log('Realtime Order Received:', newOrder);
+
+          // Notify if the user is NOT the one who created it (avoid double notification)
+          // Also strict check on sector if needed, but we already filtered by user role above
+          if (newOrder.requester_id !== user.id) {
+             addNotification({
+                title: 'Nova Solicitação',
+                message: `Novo chamado de ${newOrder.priority} em ${newOrder.location}`,
+                type: 'info'
+             });
+          }
+      })
+      .subscribe();
+
+    return () => {
+        supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   const saveToStorage = (newNotifications: Notification[]) => {
     setNotifications(newNotifications);
     localStorage.setItem('notifications', JSON.stringify(newNotifications));
   };
 
-  const addNotification = (data: Omit<Notification, 'id' | 'time' | 'read'>) => {
-    const newNotification: Notification = {
-      id: Math.random().toString(36).substr(2, 9),
-      time: new Date().toISOString(),
-      read: false,
-      ...data
-    };
-    saveToStorage([newNotification, ...notifications]);
-
-    // Play Sound
-    try {
-        // Use a better base64 for a noticeable beep "Ding"
-        // This is a short sine beep encoded
-        // Real Base64 for a "Ding" sound (approx):
-        // Since I can't upload a file, I will stick to AudioContext but FIX it to run on interaction or try this standard beep data URI. 
-        // If AudioContext fails, this fallback needs to be good. But let's trust AudioContext improvement only.
-        playNotificationSound();
-    } catch (e) {
-        console.error('Error playing sound:', e);
-    }
-
-    // System Notification
-    if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(data.title, {
-            body: data.message,
-            icon: '/logo.png', // Assuming logo exists
-            badge: '/logo.png'
-        });
-    }
-  };
-
   const playNotificationSound = () => {
     try {
-        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-        if (!AudioContext) return;
+        const AudioCtor = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioCtor) return;
         
-        const ctx = new AudioContext();
+        if (!audioContextRef.current) {
+            audioContextRef.current = new AudioCtor();
+        }
         
-        // Resume context if suspended (common in browsers)
+        const ctx = audioContextRef.current;
+        
+        // Always try to resume
         if (ctx.state === 'suspended') {
-             ctx.resume();
+             ctx.resume().catch(e => console.warn('Audio resume failed', e));
         }
 
         const osc = ctx.createOscillator();
@@ -120,7 +139,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         osc.connect(gain);
         gain.connect(ctx.destination);
 
-        // A pleasant "Ding" sound: Sine wave, high pitch to lower, short decay
+        // A pleasant "Ding" sound: Sine wave
         osc.type = 'sine';
         osc.frequency.setValueAtTime(800, ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.15);
@@ -132,6 +151,38 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         osc.stop(ctx.currentTime + 0.5);
     } catch (e) {
         console.error('AudioContext error:', e);
+    }
+  };
+
+  const addNotification = (data: Omit<Notification, 'id' | 'time' | 'read'>) => {
+    // Play Sound immediately
+    playNotificationSound();
+
+    const newNotification: Notification = {
+      id: Math.random().toString(36).substr(2, 9),
+      time: new Date().toISOString(),
+      read: false,
+      ...data
+    };
+    
+    // Add to state
+    setNotifications(current => {
+       const updated = [newNotification, ...current];
+       saveToStorage(updated);
+       return updated;
+    });
+
+    // System Notification
+    if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+            new Notification(data.title, {
+                body: data.message,
+                icon: '/vite.svg', // Default vite icon as placeholder if logo not present
+                tag: 'maintenance-alert'
+            });
+        } catch (e) {
+            console.error('System notification error', e);
+        }
     }
   };
 
@@ -158,7 +209,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       addNotification, 
       markAsRead, 
       markAllAsRead,
-      clearAll
+      clearAll,
+      playNotificationSound
     }}>
       {children}
     </NotificationContext.Provider>

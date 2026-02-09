@@ -1,69 +1,33 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
-import { uploadOrderPhoto, formatOrderId } from '../lib/utils';
+import { uploadOrderPhoto } from '../lib/utils';
 import { useAuth } from './AuthContext';
-import { useNotifications } from './NotificationContext';
+// useNotifications removed as it's no longer used here
 
 export interface Order {
   id: string;
-  short_id?: number;
-  title: string;
-  description: string;
-  requester: string;
-  requester_id?: string;
-  date: string;
-  time: string;
-  location: string;
-  sector: string;
-  priority: 'baixa' | 'media' | 'alta' | 'urgente';
-  status: 'aberto' | 'em_andamento' | 'concluido';
-  photos: string[];
-  history: any[];
-  created_at?: string;
-}
+// ... (lines 8-36 omitted, implied context is fine if I match correct range)
+// Actually I need to match the start of the file for imports.
+// I will target imports specifically.
 
-interface NewOrderData extends Omit<Order, 'id' | 'status' | 'history' | 'photos' | 'short_id' | 'created_at'> {
-  photos: File[];
-}
+// I will target lines 1-6
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { supabase } from '../lib/supabase';
+import { uploadOrderPhoto } from '../lib/utils';
+import { useAuth } from './AuthContext';
 
-interface OrdersContextType {
-  orders: Order[];
-  loading: boolean;
-  addOrder: (data: NewOrderData) => Promise<void>;
-  updateOrder: (id: string, updates: Partial<Order>) => Promise<void>;
-  fetchOrders: () => Promise<void>;
-}
-
-const OrdersContext = createContext<OrdersContextType | undefined>(undefined);
-
-export function OrdersProvider({ children }: { children: ReactNode }) {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { user, canEditDemands } = useAuth();
-  const { addNotification } = useNotifications();
+// ...
+// Target useAuth and useNotifications lines
+  const { user } = useAuth();
+  // useNotifications removed
 
   useEffect(() => {
     fetchOrders();
 
     const channel = supabase
       .channel('public:orders')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
-        // Handle Notifications for New Orders
-        if (payload.eventType === 'INSERT' && user) {
-             const newOrder = payload.new as Order;
-             
-             // Check if user is Maintenance (admin/leader) and has permission
-             // Removed (newOrder.requester_id !== user.id) check to allow testing on same account
-             if (canEditDemands()) {
-                 const orderIdDisplay = newOrder.short_id ? formatOrderId(newOrder.short_id) : 'Nova';
-                 addNotification({
-                     title: 'Nova Solicitação',
-                     message: `${orderIdDisplay}: ${newOrder.title} - Aberta por ${newOrder.requester}`,
-                     type: 'info'
-                 });
-             }
-        }
-
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+        // payload removed as unused
         // Simple optimistic update strategy: re-fetch or manual merge
         // Re-fetching is safer for now to get joins if we add them later
         fetchOrders(); 
