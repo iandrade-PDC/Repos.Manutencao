@@ -35,8 +35,8 @@ export function ActivityChart({ data }: ActivityChartProps) {
         <p className="text-sm text-marinho/60">Demandas vs Resoluções (Últimos 15 dias)</p>
       </div>
       
-      <div className="h-[300px] w-full">
-        <ResponsiveContainer width="99%" height="100%">
+      <div className="h-[300px] w-full" style={{ width: '100%', height: 300 }}>
+        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
           <LineChart
             data={chartData}
             margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
