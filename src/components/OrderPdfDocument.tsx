@@ -28,7 +28,7 @@ const styles = StyleSheet.create({
   
   // Header
   header: {
-    backgroundColor: colors.marinho,
+    backgroundColor: '#1E293B', // Slate 800 - Softer than Marinho
     padding: 30,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   brandName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold', // Helvetica supports standard weights
     color: colors.white,
     textTransform: 'uppercase',
@@ -198,7 +198,11 @@ export const OrderPdfDocument = ({ order }: OrderPdfProps) => {
   };
 
   return (
-    <Document>
+    <Document 
+      title={`Ordem de Serviço ${displayId}`}
+      author="Ancoradouro da Ponta"
+      subject={`Relatório de Manutenção - ${displayId}`}
+    >
       <Page size="A4" style={styles.page}>
         
         {/* Header */}
