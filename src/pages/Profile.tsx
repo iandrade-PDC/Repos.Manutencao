@@ -10,7 +10,7 @@ export function Profile() {
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    phone: '(11) 98765-4321', // Example placeholder, usually stored in profiles if needed
+    phone: user?.phone || '', // Fetch real phone from user context
     role: user?.role || 'user',
     department: user?.sector || '', // Mapped to 'Cargo' input
     location: 'Sede Administrativa'
@@ -30,7 +30,8 @@ export function Profile() {
         full_name: formData.name,
         // Update sector only if user is admin (or logic permits, UI allows it if isEditing is true)
         // Since we enabled the input for admin, we should save it.
-        sector: formData.department
+        sector: formData.department,
+        phone: formData.phone // Update phone in profile
       };
 
       const { error } = await supabase

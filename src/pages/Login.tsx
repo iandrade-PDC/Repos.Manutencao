@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Lock, User, AlertCircle } from 'lucide-react';
+import { Lock, User, AlertCircle, Phone } from 'lucide-react';
 
 export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [sector, setSector] = useState('');
+  const [phone, setPhone] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   
   const [error, setError] = useState('');
@@ -35,7 +36,7 @@ export function Login() {
       }
 
       if (isSignUp) {
-        await signUp(email, password, name, sector);
+        await signUp(email, password, name, sector, phone);
         // Auto login or show success message? Supabase usually logs in automatically after sign up unless validation is required.
         // But if confirm email is on, it won't. I disabled confirm email implicitly by not configuring it, 
         // default Supabase project requires confirm email.
@@ -93,7 +94,7 @@ export function Login() {
             </div>
           )}
 
-          {isSignUp && (
+           {isSignUp && (
              <div className="space-y-2">
                <label className="text-sm font-medium text-marinho">Setor / Departamento</label>
                <div className="relative">
@@ -115,7 +116,24 @@ export function Login() {
                  </select>
                </div>
              </div>
-          )}
+           )}
+
+           {isSignUp && (
+             <div className="space-y-2">
+               <label className="text-sm font-medium text-marinho">Telefone / WhatsApp</label>
+               <div className="relative">
+                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-marinho/40" size={20} />
+                 <input
+                   type="tel"
+                   required
+                   className="w-full pl-10 pr-4 py-3 rounded-lg border border-marinho/20 focus:outline-none focus:ring-2 focus:ring-marinho/20 focus:border-marinho transition-all bg-areia/30 text-marinho placeholder-marinho/30"
+                   placeholder="(00) 00000-0000"
+                   value={phone}
+                   onChange={e => setPhone(e.target.value)}
+                 />
+               </div>
+             </div>
+           )}
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-marinho">Email</label>

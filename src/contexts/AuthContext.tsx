@@ -9,13 +9,14 @@ interface User {
   avatar?: string;
   approved: boolean; 
   sector?: string; // Add sector field
+  phone?: string; // Add phone field
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password?: string) => Promise<void>;
-  signUp: (email: string, password: string, name: string, sector?: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string, sector?: string, phone?: string) => Promise<void>;
   logout: () => Promise<void>;
   canManageUsers: () => boolean;
   canEditDemands: () => boolean;
@@ -82,7 +83,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: email,
           avatar: data.avatar_url,
           approved: data.approved !== false,
-          sector: data.sector
+          sector: data.sector,
+          phone: data.phone // Store phone
         });
       }
     } catch (err) {
@@ -105,14 +107,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
-  const signUp = async (email: string, password: string, name: string, sector?: string) => {
+  const signUp = async (email: string, password: string, name: string, sector?: string, phone?: string) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name: name,
-          sector: sector // Add sector to metadata
+          sector: sector, // Add sector to metadata
+          phone: phone // Add phone to metadata
         }
       }
     });
