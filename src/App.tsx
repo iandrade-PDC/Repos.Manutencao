@@ -16,6 +16,9 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { NotificationToast } from './components/NotificationToast';
 
 import { UserManagement } from './pages/UserManagement';
+import { ChecklistList } from './pages/checklists/ChecklistList';
+import { ChecklistExecution } from './pages/checklists/ChecklistExecution';
+import { ChecklistBuilder } from './pages/checklists/ChecklistBuilder';
 
 function App() {
   return (
@@ -38,6 +41,10 @@ function App() {
                   <Route path="/ranking" element={<Ranking />} />
                   <Route path="/users" element={<UserManagement />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="/checklists" element={<ChecklistList />} />
+                  <Route path="/checklists/create" element={<ChecklistBuilder />} />
+                  <Route path="/checklists/new" element={<ChecklistExecution />} />
+                  <Route path="/checklists/:id" element={<ChecklistExecution />} />
                 </Route>
               </Route>
             </Routes>

@@ -42,7 +42,7 @@ export function NotificationToast() {
   if (visibleToasts.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2 pointer-events-none">
+    <div className="fixed top-20 right-4 z-[100] space-y-2 pointer-events-none">
       {visibleToasts.map(toast => (
         <div 
             key={toast.id}
