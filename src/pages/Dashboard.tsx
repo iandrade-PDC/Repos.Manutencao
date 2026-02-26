@@ -2,12 +2,20 @@
 import { StatCard } from '../components/dashboard/StatCard';
 import { RankingList } from '../components/dashboard/RankingList';
 import { ActivityChart } from '../components/dashboard/ActivityChart';
-import { AlertCircle, CheckCircle2, RotateCcw } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { 
+  BarChart, Activity, Clock, Users, Calendar, 
+  ArrowUpRight, ArrowDownRight, CheckCircle2, AlertCircle, AlertTriangle, ArrowRight, RotateCcw 
+} from 'lucide-react';
 import { useOrders } from '../contexts/OrdersContext';
-import { useMemo, useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { cn } from '../lib/utils';
+import { Link } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 export function Dashboard() {
   const { orders } = useOrders();
+  const { user } = useAuth();
   const [periodFilter, setPeriodFilter] = useState('geral'); // 'geral' (30 days), 'month' (current month), 'week' (7 days)
 
   // Filter orders based on period
@@ -155,8 +163,61 @@ export function Dashboard() {
       .slice(0, 5);
   }, [filteredOrders]);
 
+  // ... (dashboard stats logic)
+  const [dailyPending, setDailyPending] = useState(true); // Assume pending until checked
+  const checkDaily = async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const { count } = await supabase
+          .from('daily_tasks_log')
+          .select('*', { count: 'exact', head: true })
+          .eq('date', today);
+      
+      // Also check readings? For simplicity check task log count. If 0 tasks logged, show alert.
+      // Better: User needs to log at least one thing to dismiss? 
+      // Or check specific critical tasks?
+      // Let's assume if ANY log entry exists for today, they started/did it.
+      if (count && count > 0) setDailyPending(false);
+  };
+  
+  useEffect(() => {
+      checkDaily();
+  }, []);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      
+      {/* Welcome Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">
+            Olá, {user?.name?.split(' ')[0]} 👋
+          </h1>
+          <p className="text-slate-500">Aqui está o resumo da operação hoje.</p>
+        </div>
+        <div className="text-sm text-slate-500 bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm">
+          {new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        </div>
+      </div>
+
+      {/* Daily Routine Alert */}
+      {dailyPending && (
+          <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center justify-between animate-in slide-in-from-top-2 shadow-sm">
+              <div className="flex items-center gap-3">
+                  <div className="bg-orange-100 p-2 rounded-full text-orange-600">
+                      <AlertTriangle size={20} />
+                  </div>
+                  <div>
+                      <h3 className="font-bold text-orange-800">Rotina de Hoje Pendente</h3>
+                      <p className="text-sm text-orange-600">Lembre-se de registrar as atividades e medições diárias.</p>
+                  </div>
+              </div>
+              <Link to="/daily" className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-orange-700 transition-colors flex items-center gap-1 shadow-sm">
+                  Iniciar Rotina <ArrowRight size={16} />
+              </Link>
+          </div>
+      )}
+
+      {/* Status Cards */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 rounded-lg shadow-sm border border-slate-200 gap-4 md:gap-0">
         <div>
           <h1 className="text-xl font-bold text-slate-800">Visão Geral</h1>

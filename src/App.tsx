@@ -19,6 +19,7 @@ import { UserManagement } from './pages/UserManagement';
 import { ChecklistList } from './pages/checklists/ChecklistList';
 import { ChecklistExecution } from './pages/checklists/ChecklistExecution';
 import { ChecklistBuilder } from './pages/checklists/ChecklistBuilder';
+import { DailyRoutine } from './pages/DailyRoutine';
 
 function App() {
   return (
@@ -41,8 +42,10 @@ function App() {
                   <Route path="/ranking" element={<Ranking />} />
                   <Route path="/users" element={<UserManagement />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="/daily" element={<DailyRoutine />} />
                   <Route path="/checklists" element={<ChecklistList />} />
                   <Route path="/checklists/create" element={<ChecklistBuilder />} />
+                  <Route path="/checklists/edit/:id" element={<ChecklistBuilder />} />
                   <Route path="/checklists/new" element={<ChecklistExecution />} />
                   <Route path="/checklists/:id" element={<ChecklistExecution />} />
                 </Route>

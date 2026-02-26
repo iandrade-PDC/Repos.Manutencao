@@ -19,11 +19,11 @@ export function Orders() {
   // Unique sectors for filter dropdown
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
-      const formattedId = order.short_id ? formatOrderId(order.short_id) : order.id;
-      const matchesSearch = order.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            order.requester.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const formattedId = order.short_id ? formatOrderId(order.short_id) : (order.id || '');
+      const matchesSearch = (order.title || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            (order.requester || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                             formattedId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            order.id.toLowerCase().includes(searchTerm.toLowerCase());
+                            (order.id || '').toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesPriority = filters.priority ? order.priority === filters.priority : true;
       const matchesDate = filters.date ? order.date === filters.date : true;
@@ -31,19 +31,44 @@ export function Orders() {
       const matchesStatus = filters.status ? order.status === filters.status : true;
 
       return matchesSearch && matchesPriority && matchesDate && matchesStatus;
+    }).sort((a, b) => {
+      const scoreA = a.gut_score || 0;
+      const scoreB = b.gut_score || 0;
+      if (scoreA !== scoreB) {
+        return scoreB - scoreA;
+      }
+      // Fallback to date sorting if scores are equal or zero
+      return new Date(b.created_at || b.date).getTime() - new Date(a.created_at || a.date).getTime();
     });
-  }, [searchTerm, filters]);
+  }, [searchTerm, filters, orders]);
 
   const getPriorityBadge = (priority: string) => {
     const priorityConfig = PRIORITIES.find(p => p.value === priority);
-    if (!priorityConfig) return 'bg-slate-100 text-slate-800'; // Default fallback
-
-    // Map NewOrder.tsx colors to badge styles if needed, or use them directly.
-    // NewOrder uses: bg-green-100 text-green-800 etc.
-    // These are standard tailwind colors that look good as badges.
-    // We append border-transparent to match the existing badge shape style if we want borders, 
-    // or just use the color classes directly.
+    if (!priorityConfig) return 'bg-slate-100 text-slate-800';
     return cn(priorityConfig.color, "border-transparent");
+  };
+
+  const renderPriorityOrGut = (order: any) => {
+    const score = order.gut_score;
+    if (score && score > 0) {
+      let colorClass = "bg-blue-100 text-blue-800 border-blue-200";
+      if (score >= 64) colorClass = "bg-red-100 text-red-800 border-red-200";
+      else if (score >= 27) colorClass = "bg-orange-100 text-orange-800 border-orange-200";
+      else if (score >= 12) colorClass = "bg-yellow-100 text-yellow-800 border-yellow-200";
+
+      return (
+        <span className={cn("px-2 py-1 rounded-md text-xs font-bold border", colorClass)} title={`G: ${order.gut_g} U: ${order.gut_u} T: ${order.gut_t}`}>
+          GUT: {score}
+        </span>
+      );
+    }
+    
+    // Fallback for old orders
+    return (
+      <span className={cn("px-2 py-1 rounded-md text-xs font-semibold border uppercase tracking-wide", getPriorityBadge(order.priority))}>
+        {order.priority}
+      </span>
+    );
   };
 
   const getStatusBadge = (status: string) => {
@@ -150,7 +175,7 @@ export function Orders() {
                 <th className="px-6 py-4">ID / Título</th>
                 <th className="px-6 py-4">Localização</th>
                 <th className="px-6 py-4">Solicitante</th>
-                <th className="px-6 py-4">Prioridade</th>
+                <th className="px-6 py-4">Prioridade (GUT)</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4 text-right">Ações</th>
               </tr>
@@ -160,8 +185,8 @@ export function Orders() {
                 filteredOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-slate-50 transition-colors group">
                     <td className="px-6 py-4">
-                      <div className="font-medium text-slate-900">{order.title}</div>
-                      <div className="text-xs text-slate-400 mt-0.5">{order.short_id ? formatOrderId(order.short_id) : order.id.substring(0,8)} • {new Date(order.date).toLocaleDateString('pt-BR')}</div>
+                      <div className="font-medium text-slate-900">{order.title || 'Solicitação sem título'}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">{order.short_id ? formatOrderId(order.short_id) : (order.id || '').substring(0,8)} • {order.date ? new Date(order.date).toLocaleDateString('pt-BR') : 'Data não def.'}</div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-slate-700">{order.location}</div>
@@ -170,15 +195,13 @@ export function Orders() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
-                          {order.requester.charAt(0)}
+                          {(order.requester || '?').charAt(0)}
                         </div>
-                        <span className="text-slate-600">{order.requester}</span>
+                        <span className="text-slate-600">{order.requester || 'N/A'}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={cn("px-2 py-1 rounded-md text-xs font-semibold border uppercase tracking-wide", getPriorityBadge(order.priority))}>
-                        {order.priority}
-                      </span>
+                      {renderPriorityOrGut(order)}
                     </td>
                     <td className="px-6 py-4">
                       {getStatusBadge(order.status)}
@@ -217,9 +240,7 @@ export function Orders() {
                     <Link to={`/orders/${order.id}`} key={order.id} className="block p-4 hover:bg-slate-50 transition-colors">
                         <div className="flex justify-between items-start mb-2">
                             <div>
-                                <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded border mb-1 inline-block uppercase tracking-wider", getPriorityBadge(order.priority))}>
-                                    {order.priority}
-                                </span>
+                                {renderPriorityOrGut(order)}
                                 <h3 className="font-semibold text-slate-800 text-sm line-clamp-1">{order.title}</h3>
                             </div>
                             {getStatusBadge(order.status)}

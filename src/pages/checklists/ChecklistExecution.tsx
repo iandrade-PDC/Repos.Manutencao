@@ -176,7 +176,8 @@ export function ChecklistExecution() {
                   location: item.area || 'Localização Vistoria',
                   sector: 'Manutenção',
                   requester_id: user?.id,
-                  priority: 'alta', 
+                  requester: user?.name || 'Vistoria Check',
+                  priority: 'alta', // Inspection failures are usually high priority
                   status: 'aberto',
                   date: new Date().toISOString().split('T')[0],
                   time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
@@ -232,48 +233,47 @@ export function ChecklistExecution() {
   );
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 pb-24">
+    <div className="max-w-2xl mx-auto pb-24 relative">
       
-      {/* Header */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm sticky top-16 z-30">
-        <div className="flex items-center gap-4 mb-4">
-            <button onClick={() => navigate('/checklists')} className="p-2 -ml-2 hover:bg-slate-100 rounded-full">
-                <ArrowLeft size={20} className="text-slate-600" />
+      {/* Sticky Header */}
+      <div className="bg-white/95 backdrop-blur-sm p-4 border-b border-slate-200 shadow-sm sticky top-0 z-30 transition-all">
+        <div className="flex items-center gap-4 mb-2">
+            <button onClick={() => navigate('/checklists')} className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 rounded-full transition-colors">
+                <ArrowLeft size={20} />
             </button>
-            <div>
-                <h1 className="text-lg font-bold text-slate-800">Execução de Vistoria</h1>
-                <p className="text-xs text-slate-500">{items.length} itens totais</p>
+            <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-2">
+                    <span className="text-xs font-bold text-marinho uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-full whitespace-nowrap">
+                        Área {currentAreaIndex + 1}/{areas.length}
+                    </span>
+                    <h2 className="text-lg font-bold text-slate-800 truncate leading-tight">
+                        {currentArea}
+                    </h2>
+                </div>
             </div>
-            <div className="ml-auto text-right">
-                <span className="text-2xl font-bold text-marinho">{progress}%</span>
+            <div className="text-right whitespace-nowrap">
+                <span className="text-xl font-bold text-marinho">{progress}%</span>
             </div>
         </div>
         
-        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+        {/* Progress Bar */}
+        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden w-full">
             <div 
-                className="h-full bg-mata transition-all duration-300"
+                className="h-full bg-mata transition-all duration-300 ease-out"
                 style={{ width: `${progress}%` }}
             />
         </div>
       </div>
 
-      {/* Current Area Title */}
-      <div className="flex items-center gap-2 px-2">
-          <div className="bg-marinho text-white px-3 py-1 rounded-md text-sm font-bold uppercase tracking-wider">
-              Área {currentAreaIndex + 1}/{areas.length}
-          </div>
-          <h2 className="text-xl font-bold text-slate-800">{currentArea}</h2>
-      </div>
-
       {/* Items List */}
-      <div className="space-y-4">
-          {currentItems.map(item => {
+      <div className="space-y-4 p-4">
+          {items.filter(i => i.area === currentArea).map(item => { // Filter here directly or use currentItems
               const result = results[item.id];
               const isOk = result?.status === 'ok';
               const isIssue = result?.status === 'issue';
 
               return (
-                  <div key={item.id} className={`bg-white rounded-lg border-l-4 shadow-sm transition-all ${
+                  <div key={item.id} className={`bg-white rounded-lg border-l-4 shadow-sm transition-all animate-in fade-in slide-in-from-bottom-2 duration-300 ${
                       isOk ? 'border-l-green-500 border-slate-200' : 
                       isIssue ? 'border-l-red-500 border-red-100 bg-red-50/10' : 
                       'border-l-slate-300 border-slate-200'
@@ -284,10 +284,10 @@ export function ChecklistExecution() {
                           <div className="flex gap-2 mb-3">
                               <button 
                                   onClick={() => handleResult(item.id, 'ok')}
-                                  className={`flex-1 py-3 px-4 rounded-lg flex items-center justify-center gap-2 font-medium transition-colors ${
+                                  className={`flex-1 py-3 px-4 rounded-lg flex items-center justify-center gap-2 font-medium transition-all active:scale-95 ${
                                       isOk 
-                                      ? 'bg-green-100 text-green-700 ring-2 ring-green-500 ring-offset-1' 
-                                      : 'bg-slate-50 text-slate-600 hover:bg-green-50 hover:text-green-600'
+                                      ? 'bg-green-100 text-green-700 ring-2 ring-green-500 ring-offset-1 shadow-sm' 
+                                      : 'bg-slate-50 text-slate-600 hover:bg-green-50 hover:text-green-600 border border-slate-200'
                                   }`}
                               >
                                   <Check size={18} />
@@ -296,10 +296,10 @@ export function ChecklistExecution() {
 
                               <button 
                                   onClick={() => handleResult(item.id, 'issue')}
-                                  className={`flex-1 py-3 px-4 rounded-lg flex items-center justify-center gap-2 font-medium transition-colors ${
+                                  className={`flex-1 py-3 px-4 rounded-lg flex items-center justify-center gap-2 font-medium transition-all active:scale-95 ${
                                       isIssue
-                                      ? 'bg-red-100 text-red-700 ring-2 ring-red-500 ring-offset-1'
-                                      : 'bg-slate-50 text-slate-600 hover:bg-red-50 hover:text-red-600'
+                                      ? 'bg-red-100 text-red-700 ring-2 ring-red-500 ring-offset-1 shadow-sm'
+                                      : 'bg-slate-50 text-slate-600 hover:bg-red-50 hover:text-red-600 border border-slate-200'
                                   }`}
                               >
                                   <X size={18} />
@@ -313,7 +313,7 @@ export function ChecklistExecution() {
                                   <div>
                                     <label className="text-xs font-bold text-red-600 uppercase mb-1 block">O que aconteceu?</label>
                                     <textarea 
-                                        className="w-full p-2 border border-red-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-red-300"
+                                        className="w-full p-2 border border-red-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[60px]"
                                         placeholder="Descreva o problema..."
                                         rows={2}
                                         value={results[item.id]?.observation || ''}
@@ -335,22 +335,22 @@ export function ChecklistExecution() {
                                       />
                                       
                                       {result?.photo ? (
-                                          <div className="relative w-fit">
-                                              <img src={result.photo} alt="Evidência" className="h-20 w-20 object-cover rounded-md border border-red-200" />
+                                          <div className="relative w-fit group">
+                                              <img src={result.photo} alt="Evidência" className="h-24 w-24 object-cover rounded-lg border border-red-200 shadow-sm" />
                                               <button 
                                                 onClick={() => setResults(prev => ({...prev, [item.id]: {...prev[item.id], photo: undefined}}))}
-                                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5"
+                                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
                                               >
-                                                  <X size={12} />
+                                                  <X size={14} />
                                               </button>
                                           </div>
                                       ) : (
                                           <button 
                                             onClick={() => fileInputRefs.current[item.id]?.click()}
                                             disabled={uploading === item.id}
-                                            className="text-xs flex items-center gap-1.5 text-red-600 bg-white border border-red-200 px-3 py-2 rounded-md hover:bg-red-50 transition-colors"
+                                            className="text-sm w-full flex items-center justify-center gap-2 text-red-600 bg-white border border-red-200 px-4 py-3 rounded-lg hover:bg-red-50 transition-colors shadow-sm font-medium"
                                           >
-                                              {uploading === item.id ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />} 
+                                              {uploading === item.id ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />} 
                                               {uploading === item.id ? 'Enviando...' : 'Adicionar Foto / Evidência'}
                                           </button>
                                       )}

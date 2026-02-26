@@ -19,6 +19,11 @@ export interface Order {
   photos: string[];
   history: any[];
   created_at?: string;
+  // GUT Matrix
+  gut_g?: number | null; // Gravidade 1-5
+  gut_u?: number | null; // Urgência 1-5
+  gut_t?: number | null; // Tendência 1-5
+  gut_score?: number | null; // G * U * T (max 125)
 }
 
 interface NewOrderData extends Omit<Order, 'id' | 'status' | 'history' | 'photos' | 'short_id' | 'created_at'> {
@@ -119,7 +124,10 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
           sector: data.sector,
           priority: data.priority,
           status: 'aberto',
-          photos: photoUrls
+          photos: photoUrls,
+          gut_g: (data as any).gut_g ?? null,
+          gut_u: (data as any).gut_u ?? null,
+          gut_t: (data as any).gut_t ?? null,
         })
         .select()
         .single();

@@ -247,12 +247,30 @@ export function OrderDetails() {
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-500 uppercase">Prioridade</label>
-              <div className="mt-1">
-                <span className={cn("px-3 py-1 rounded-full text-xs font-bold uppercase", getPriorityColor(order.priority))}>
-                  {order.priority}
-                </span>
-              </div>
+              <label className="text-xs font-semibold text-slate-500 uppercase">Prioridade (GUT)</label>
+              {(order.gut_score && order.gut_score > 0) ? (
+                <div className="mt-2 space-y-2">
+                  <div className="flex gap-2">
+                    <span title="Gravidade" className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">G: {order.gut_g}</span>
+                    <span title="Urgência" className="bg-orange-100 text-orange-800 text-xs font-bold px-2 py-1 rounded">U: {order.gut_u}</span>
+                    <span title="Tendência" className="bg-purple-100 text-purple-800 text-xs font-bold px-2 py-1 rounded">T: {order.gut_t}</span>
+                  </div>
+                  <div className={cn("px-3 py-1.5 rounded border text-xs font-bold w-fit mt-2", 
+                    order.gut_score >= 64 ? "bg-red-100 text-red-800 border-red-200" :
+                    order.gut_score >= 27 ? "bg-orange-100 text-orange-800 border-orange-200" :
+                    order.gut_score >= 12 ? "bg-yellow-100 text-yellow-800 border-yellow-200" :
+                    "bg-blue-100 text-blue-800 border-blue-200"
+                  )}>
+                    Pontuação: {order.gut_score}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-1">
+                  <span className={cn("px-3 py-1 rounded-full text-xs font-bold uppercase", getPriorityColor(order.priority))}>
+                    {order.priority}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { ChecklistTemplate } from '../../types/checklist';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardCheck, ArrowRight, MapPin, Plus } from 'lucide-react';
+import { ClipboardCheck, ArrowRight, MapPin, Plus, Trash2, Edit2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 export function ChecklistList() {
@@ -21,46 +21,41 @@ export function ChecklistList() {
         .from('checklist_templates')
         .select('*')
         .eq('active', true);
-
+        
       if (error) throw error;
       setTemplates(data || []);
     } catch (error) {
       console.error('Error fetching templates:', error);
-      // Fallback for demo/development if table doesn't exist yet
-      setTemplates([
-          { id: 'mock-1', name: 'Vistoria Padrão - Tesoura', location: 'Tesoura', active: true },
-          { id: 'mock-2', name: 'Vistoria Padrão - Bangalô', location: 'Bangalô', active: true },
-      ]);
     } finally {
       setLoading(false);
     }
   };
 
-  const startInspection = async (templateId: string) => {
-    try {
-        setLoading(true);
-        // Create new inspection
-        const { data, error } = await supabase
-            .from('inspections')
-            .insert({
-                template_id: templateId,
-                user_id: user?.id,
-                status: 'in_progress'
-            })
-            .select()
-            .single();
-
-        if (error) throw error;
-        
-        navigate(`/checklists/${data.id}`);
-    } catch (error) {
-        console.error('Error starting inspection:', error);
-        // Mock navigation for dev
-        navigate(`/checklists/new?template=${templateId}`);
-    } finally {
-        setLoading(false);
-    }
+  const handleEdit = (e: React.MouseEvent, id: string) => {
+      e.stopPropagation(); // Prevent card click
+      navigate(`/checklists/edit/${id}`);
   };
+
+  const handleDelete = async (e: React.MouseEvent, id: string, name: string) => {
+      e.stopPropagation();
+      if (window.confirm(`Tem certeza que deseja excluir o modelo "${name}"? Ele será arquivado e não aparecerá mais nesta lista.`)) {
+          try {
+              const { error } = await supabase
+                  .from('checklist_templates')
+                  .update({ active: false })
+                  .eq('id', id);
+              
+              if (error) throw error;
+              
+              setTemplates(templates.filter(t => t.id !== id));
+          } catch (error) {
+              console.error('Error deleting:', error);
+              alert('Erro ao excluir template.');
+          }
+      }
+  };
+
+  if (loading) return <div className="p-8 text-center text-slate-500">Carregando modelos...</div>;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -82,35 +77,56 @@ export function ChecklistList() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {templates.map((template) => (
-          <button
+        {templates.map(template => (
+          <div 
             key={template.id}
-            onClick={() => startInspection(template.id)}
-            disabled={loading}
-            className="flex flex-col items-start text-left bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:border-marinho/50 hover:shadow-md transition-all group disabled:opacity-50"
+            onClick={() => navigate(`/checklists/new?template=${template.id}`)}
+            className="bg-white p-6 rounded-xl border border-slate-200 hover:border-marinho hover:shadow-md transition-all cursor-pointer group relative flex flex-col"
           >
-            <div className="p-3 bg-blue-50 rounded-lg text-marinho mb-4 group-hover:bg-marinho group-hover:text-white transition-colors">
-              <ClipboardCheck size={24} />
+            <div className="flex items-start justify-between mb-4">
+              <div className="p-3 bg-blue-50 rounded-lg text-marinho group-hover:bg-marinho group-hover:text-white transition-colors">
+                <ClipboardCheck size={24} />
+              </div>
+              
+              {(user?.role === 'admin' || user?.role === 'leader') ? (
+                  <div className="flex gap-1">
+                      <button 
+                        onClick={(e) => handleEdit(e, template.id)}
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                        title="Editar Modelo"
+                      >
+                          <Edit2 size={16} />
+                      </button>
+                      <button 
+                        onClick={(e) => handleDelete(e, template.id, template.name)}
+                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                        title="Excluir Modelo"
+                      >
+                          <Trash2 size={16} />
+                      </button>
+                  </div>
+              ) : (
+                <ArrowRight className="text-slate-300 group-hover:text-marinho transition-colors" />
+              )}
             </div>
             
-            <h3 className="text-lg font-bold text-slate-800 mb-1">{template.name}</h3>
+            <h3 className="font-bold text-lg text-slate-800 mb-1">{template.name}</h3>
             
-            <div className="flex items-center gap-2 text-slate-500 text-sm mb-4">
+            <div className="flex items-center gap-1 text-sm text-slate-500 mb-4">
               <MapPin size={14} />
               <span>{template.location}</span>
             </div>
 
-            <div className="w-full mt-auto pt-4 border-t border-slate-100 flex items-center justify-between text-marinho font-medium text-sm">
-              <span>Iniciar Vistoria</span>
-              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+            <div className="mt-auto pt-4 border-t border-slate-100 flex items-center text-marinho font-medium text-sm group-hover:underline">
+              Iniciar Vistoria <ArrowRight size={16} className="ml-1" />
             </div>
-          </button>
+          </div>
         ))}
       </div>
       
       {templates.length === 0 && !loading && (
           <div className="text-center p-12 bg-slate-50 rounded-lg border border-dashed border-slate-300">
-              <p className="text-slate-500">Nenhum modelo de checklist encontrado.</p>
+             <p className="text-slate-500">Nenhum modelo de vistoria ativo encontrado.</p>
           </div>
       )}
     </div>

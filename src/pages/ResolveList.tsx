@@ -26,17 +26,33 @@ export function ResolveList() {
         (order.id && order.id.toLowerCase().includes(searchTerm.toLowerCase()));
 
       return matchesSearch;
+    }).sort((a, b) => {
+      const scoreA = a.gut_score || 0;
+      const scoreB = b.gut_score || 0;
+      if (scoreA !== scoreB) {
+        return scoreB - scoreA;
+      }
+      return new Date(b.created_at || b.date).getTime() - new Date(a.created_at || a.date).getTime();
     });
   }, [orders, activeTab, searchTerm]);
 
-  const getPriorityInfo = (priority: string) => {
+  const getGutPriorityInfo = (order: any) => {
+    const score = order.gut_score;
+    if (score && score > 0) {
+      if (score >= 64) return { color: 'bg-red-100 text-red-800 border-red-200', label: `GUT: ${score}` };
+      if (score >= 27) return { color: 'bg-orange-100 text-orange-800 border-orange-200', label: `GUT: ${score}` };
+      if (score >= 12) return { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: `GUT: ${score}` };
+      return { color: 'bg-blue-100 text-blue-800 border-blue-200', label: `GUT: ${score}` };
+    }
+    
+    // Fallback
     const map = {
       baixa: { color: 'bg-green-100 text-green-700', label: 'Baixa' },
       media: { color: 'bg-blue-100 text-blue-700', label: 'Média' },
       alta: { color: 'bg-orange-100 text-orange-700', label: 'Alta' },
       urgente: { color: 'bg-red-100 text-red-700', label: 'Urgente' },
     };
-    return map[priority as keyof typeof map] || map.baixa;
+    return map[order.priority as keyof typeof map] || map.baixa;
   };
 
   const [generatingPdfId, setGeneratingPdfId] = useState<string | null>(null);
@@ -129,7 +145,7 @@ export function ResolveList() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredOrders.length > 0 ? (
             filteredOrders.map((order) => {
-              const priority = getPriorityInfo(order.priority);
+              const priority = getGutPriorityInfo(order);
               const isResolved = order.status === 'concluido';
               
               return (
@@ -139,11 +155,11 @@ export function ResolveList() {
                   )}>
                   <div className="p-4 flex-1">
                     <div className="flex items-start justify-between mb-2">
-                      <span className="text-xs font-mono text-slate-400">
-                         {order.short_id ? `OS${order.short_id.toString().padStart(4,'0')}` : (order.id && order.id.length > 8 ? order.id.substring(0,8) + '...' : order.id)}
-                      </span>
+                       <span className="text-xs font-mono text-slate-400">
+                          {order.short_id ? `OS${order.short_id.toString().padStart(4,'0')}` : (order.id && order.id.length > 8 ? order.id.substring(0,8) + '...' : order.id)}
+                       </span>
                       <div className="flex gap-2">
-                        <span className={cn("text-[10px] uppercase font-bold px-2 py-0.5 rounded-full", priority.color)}>
+                        <span className={cn("text-[10px] uppercase font-bold px-2 py-0.5 rounded border", priority.color)}>
                           {priority.label}
                         </span>
                         {isResolved && (

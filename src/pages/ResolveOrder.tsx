@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { uploadOrderPhoto, formatOrderId } from '../lib/utils';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useOrders } from '../contexts/OrdersContext';
-
+import imageCompression from 'browser-image-compression';
 export function ResolveOrder() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -37,15 +37,39 @@ export function ResolveOrder() {
     }
   }, [user]);
 
-  const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setPhotoFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const options = {
+          maxSizeMB: 0.5, // 500KB max
+          maxWidthOrHeight: 1280,
+          useWebWorker: true
+        };
+        const compressedFile = await imageCompression(file, options);
+        const compressedFileObj = new File([compressedFile], file.name, {
+          type: compressedFile.type,
+          lastModified: Date.now(),
+        });
+        
+        setPhotoFile(compressedFileObj);
+        
+        // Generate preview from the compressed file
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPhotoPreview(reader.result as string);
+        };
+        reader.readAsDataURL(compressedFileObj);
+      } catch (error) {
+        console.error("Error compressing image:", error);
+        // Fallback to original
+        setPhotoFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPhotoPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 

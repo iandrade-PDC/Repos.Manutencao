@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, List, CheckSquare, BarChart3, Menu, LogOut, Bell, MessageSquare, User, X, Users, ClipboardCheck } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, List, CheckSquare, BarChart3, Menu, LogOut, Bell, MessageSquare, User, X, Users, ClipboardCheck, CalendarCheck } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { NotificationDropdown } from '../components/common/NotificationDropdown';
@@ -17,7 +17,11 @@ export function Layout() {
     { to: "/new-order", icon: PlusCircle, label: "Nova Solicitação" },
     { to: "/orders", icon: List, label: "Lista de Ordens" },
     { to: "/resolve", icon: CheckSquare, label: "Resolver Chamados" },
-    { to: "/checklists", icon: ClipboardCheck, label: "Vistorias / Checklist" },
+    // Conditionally add Checklist and Daily Routine
+    ...((user?.role === 'admin' || user?.role === 'leader' || user?.sector === 'Manutenção') ? [
+      { to: "/daily", icon: CalendarCheck, label: "Rotina Diária" },
+      { to: "/checklists", icon: ClipboardCheck, label: "Vistorias / Checklist" }
+    ] : []),
     { to: "/ranking", icon: BarChart3, label: "Rankings & Relatórios" },
     { to: "/profile", icon: User, label: "Meu Perfil" },
   ];
