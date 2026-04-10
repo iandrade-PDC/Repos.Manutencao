@@ -20,6 +20,7 @@ import { UserManagement } from './pages/UserManagement';
 import { ChecklistList } from './pages/checklists/ChecklistList';
 import { ChecklistExecution } from './pages/checklists/ChecklistExecution';
 import { ChecklistBuilder } from './pages/checklists/ChecklistBuilder';
+import { ChecklistHistory } from './pages/checklists/ChecklistHistory';
 import { DailyRoutine } from './pages/DailyRoutine';
 
 function App() {
@@ -47,6 +48,7 @@ function App() {
                   <Route path="/daily" element={<DailyRoutine />} />
                   <Route path="/checklists" element={<ChecklistList />} />
                   <Route path="/checklists/create" element={<ChecklistBuilder />} />
+                  <Route path="/checklists/history" element={<ChecklistHistory />} />
                   <Route path="/checklists/edit/:id" element={<ChecklistBuilder />} />
                   <Route path="/checklists/new" element={<ChecklistExecution />} />
                   <Route path="/checklists/:id" element={<ChecklistExecution />} />

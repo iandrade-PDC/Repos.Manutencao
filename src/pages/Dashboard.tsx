@@ -214,20 +214,21 @@ export function Dashboard() {
 
       {/* Daily Routine Alert */}
       {dailyPending && (
-          <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center justify-between animate-in slide-in-from-top-2 shadow-sm">
+          <Link to="/daily" className="group bg-orange-50 border border-orange-200 rounded-xl p-3 sm:p-4 flex items-center justify-between hover:bg-orange-100 transition-colors animate-in slide-in-from-top-2 shadow-sm">
               <div className="flex items-center gap-3">
-                  <div className="bg-orange-100 p-2 rounded-full text-orange-600">
-                      <AlertTriangle size={20} />
+                  <div className="bg-orange-100 p-2 rounded-full text-orange-600 group-hover:bg-white transition-colors shrink-0">
+                      <AlertTriangle size={18} />
                   </div>
                   <div>
-                      <h3 className="font-bold text-orange-800">Rotina de Hoje Pendente</h3>
-                      <p className="text-sm text-orange-600">Lembre-se de registrar as atividades e medições diárias.</p>
+                      <h3 className="font-bold text-orange-800 text-sm sm:text-base leading-tight">Rotina Diária Pendente</h3>
+                      <p className="text-xs text-orange-600 hidden sm:block mt-0.5">Registre as atividades e medições de hoje.</p>
                   </div>
               </div>
-              <Link to="/daily" className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-orange-700 transition-colors flex items-center gap-1 shadow-sm">
-                  Iniciar Rotina <ArrowRight size={16} />
-              </Link>
-          </div>
+              <div className="flex items-center gap-1 text-orange-700 text-xs sm:text-sm font-bold uppercase tracking-wider shrink-0 bg-orange-200/50 px-3 py-1.5 rounded-lg group-hover:bg-orange-200 transition-colors">
+                  <span className="hidden sm:inline">Iniciar</span>
+                  <ArrowRight size={16} />
+              </div>
+          </Link>
       )}
 
       {/* Status Cards */}

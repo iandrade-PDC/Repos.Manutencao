@@ -262,7 +262,6 @@ export function ResolveOrder() {
                     type="file" 
                     className="hidden" 
                     accept="image/*" 
-                    capture="environment"
                     onChange={handlePhotoChange} 
                   />
                 </label>

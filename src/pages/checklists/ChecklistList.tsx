@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { ChecklistTemplate } from '../../types/checklist';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardCheck, ArrowRight, MapPin, Plus, Trash2, Edit2 } from 'lucide-react';
+import { ClipboardCheck, ArrowRight, MapPin, Plus, Trash2, Edit2, Download, FileText } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { ChecklistPdfDocument } from '../../components/ChecklistPdfDocument';
 
 export function ChecklistList() {
   const [templates, setTemplates] = useState<ChecklistTemplate[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -24,8 +27,28 @@ export function ChecklistList() {
         
       if (error) throw error;
       setTemplates(data || []);
+
+      // Carregar histórico recente
+      const { data: histData } = await supabase
+          .from('inspections')
+          .select(`
+             id, 
+             completed_at,
+             checklist_templates(name, location),
+             inspection_results(
+                 status,
+                 observation,
+                 checklist_items(description, area)
+             )
+          `)
+          .eq('status', 'completed')
+          .order('completed_at', { ascending: false })
+          .limit(10);
+          
+      if (histData) setHistory(histData);
+
     } catch (error) {
-      console.error('Error fetching templates:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -129,6 +152,72 @@ export function ChecklistList() {
              <p className="text-slate-500">Nenhum modelo de vistoria ativo encontrado.</p>
           </div>
       )}
+
+      {/* Histórico Recente */}
+      <div className="mt-12 pt-8 border-t border-slate-200">
+         <div className="flex items-center justify-between mb-4">
+             <h2 className="text-xl font-bold text-slate-800">Histórico Recente</h2>
+             {history.length > 0 && (
+                 <button onClick={() => navigate('/checklists/history')} className="text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors">
+                     Ver Acervo Completo
+                 </button>
+             )}
+         </div>
+         {history.length > 0 ? (
+             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+                <table className="w-full text-left text-sm text-slate-600 min-w-[600px]">
+                   <thead className="bg-slate-50 border-b border-slate-200 text-xs uppercase font-semibold text-slate-500">
+                      <tr>
+                         <th className="px-6 py-4">Data / Hora</th>
+                         <th className="px-6 py-4">Modelo</th>
+                         <th className="px-6 py-4">Status</th>
+                         <th className="px-6 py-4 text-right">Relatório PDF</th>
+                      </tr>
+                   </thead>
+                   <tbody className="divide-y divide-slate-100">
+                      {history.map(insp => {
+                          const errors = insp.inspection_results?.filter((r:any) => r.status === 'issue')?.length || 0;
+                          return (
+                              <tr key={insp.id} className="hover:bg-slate-50">
+                                  <td className="px-6 py-4 font-medium text-slate-800 whitespace-nowrap">
+                                      {new Date(insp.completed_at).toLocaleDateString('pt-BR')} às {new Date(insp.completed_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                  </td>
+                                  <td className="px-6 py-4 font-medium text-slate-700">{insp.checklist_templates?.name || 'N/A'}</td>
+                                  <td className="px-6 py-4">
+                                      {errors > 0 
+                                         ? <span className="text-red-600 font-medium bg-red-50 px-2 py-1 rounded-full text-xs whitespace-nowrap">{errors} Problemas</span> 
+                                         : <span className="text-green-600 font-medium bg-green-50 px-2 py-1 rounded-full text-xs whitespace-nowrap">Conforme</span>}
+                                  </td>
+                                  <td className="px-6 py-4 pl-0 text-right">
+                                      <div className="flex justify-end">
+                                          <PDFDownloadLink
+                                              document={
+                                                  <ChecklistPdfDocument 
+                                                      inspection={insp} 
+                                                      template={insp.checklist_templates} 
+                                                      results={insp.inspection_results || []} 
+                                                      userProfile={{ name: user?.name || 'Técnico' }}
+                                                  />
+                                              }
+                                              fileName={`Vistoria_${insp.checklist_templates?.name || 'Local'}_${new Date(insp.completed_at).toLocaleDateString('pt-BR').replace(/\//g,'-')}.pdf`}
+                                              className="inline-flex items-center gap-2 text-marinho hover:text-blue-700 font-medium bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                                          >
+                                              {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
+                                              {/* @ts-ignore */}
+                                              {({ loading }) => loading ? 'Gerando...' : <><Download size={16} /> Baixar</>}
+                                          </PDFDownloadLink>
+                                      </div>
+                                  </td>
+                              </tr>
+                          );
+                      })}
+                   </tbody>
+                </table>
+             </div>
+         ) : (
+             <p className="text-slate-500 text-sm">Nenhuma vistoria concluída recente.</p>
+         )}
+      </div>
     </div>
   );
 }

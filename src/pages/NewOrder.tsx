@@ -378,7 +378,6 @@ export function NewOrder() {
                     type="file" 
                     accept="image/*" 
                     className="hidden" 
-                    capture="environment"
                     onChange={handlePhotoUpload}
                   />
                 </label>

@@ -316,7 +316,6 @@ export function ChecklistExecution() {
                                       <input 
                                           type="file" 
                                           accept="image/*"
-                                          capture="environment" // Opens camera on mobile
                                           className="hidden"
                                           ref={(el) => { if (el) fileInputRefs.current[item.id] = el; }}
                                           onChange={(e) => {
