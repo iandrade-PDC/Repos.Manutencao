@@ -5,7 +5,7 @@ import { ActivityChart } from '../components/dashboard/ActivityChart';
 import { useState, useMemo, useEffect } from 'react';
 import { 
   BarChart, Activity, Clock, Users, Calendar, 
-  ArrowUpRight, ArrowDownRight, CheckCircle2, AlertCircle, AlertTriangle, ArrowRight, RotateCcw 
+  ArrowUpRight, ArrowDownRight, CheckCircle2, AlertCircle, AlertTriangle, ArrowRight, RotateCcw, Plus
 } from 'lucide-react';
 import { useOrders } from '../contexts/OrdersContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,7 +14,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 export function Dashboard() {
-  const { orders } = useOrders();
+  const { orders, fetchOrders } = useOrders();
   const { user } = useAuth();
   const [periodFilter, setPeriodFilter] = useState('geral'); // 'geral' (30 days), 'month' (current month), 'week' (7 days)
 
@@ -38,7 +38,9 @@ export function Dashboard() {
     startDate.setHours(0, 0, 0, 0);
 
     return orders.filter(o => {
-        const orderDate = new Date(o.date);
+        if (!o.date) return false;
+        const [year, month, day] = o.date.split('-');
+        const orderDate = new Date(Number(year), Number(month) - 1, Number(day));
         return orderDate >= startDate && orderDate <= today;
     });
   }, [orders, periodFilter]);
@@ -59,7 +61,10 @@ export function Dashboard() {
     // Iteration to fill generic dates
     const initialDate = new Date(startDate);
     for (let d = initialDate; d <= today; d.setDate(d.getDate() + 1)) {
-        const dateStr = d.toISOString().split('T')[0]; // YYYY-MM-DD
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const dateStr = `${yyyy}-${mm}-${dd}`;
         // Format for display (DD/MM)
         const displayDate = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
         dataMap[dateStr] = { date: displayDate, demandas: 0, resolucoes: 0 };
@@ -67,7 +72,7 @@ export function Dashboard() {
 
     // Populate Demandas
     filteredOrders.forEach(o => {
-        const dateStr = new Date(o.date).toISOString().split('T')[0];
+        const dateStr = o.date;
         if (dataMap[dateStr]) dataMap[dateStr].demandas += 1;
     });
 
@@ -83,13 +88,17 @@ export function Dashboard() {
            let resDateStr = '';
            const resLog = o.history?.find((h: any) => h.type === 'resolution');
            if (resLog && resLog.created_at) {
-               resDateStr = new Date(resLog.created_at).toISOString().split('T')[0];
+               const d = new Date(resLog.created_at);
+               const yyyy = d.getFullYear();
+               const mm = String(d.getMonth() + 1).padStart(2, '0');
+               const dd = String(d.getDate()).padStart(2, '0');
+               resDateStr = `${yyyy}-${mm}-${dd}`;
            } else if (resLog && resLog.details?.date) {
                 // If we stored date string manually in details
                 resDateStr = resLog.details.date;
            } else {
-               // Fallback: use order date (not great, but better than nothing)
-               resDateStr = new Date(o.date).toISOString().split('T')[0];
+               // Fallback: use order date
+               resDateStr = o.date;
            }
 
            if (dataMap[resDateStr]) {
@@ -194,8 +203,14 @@ export function Dashboard() {
           </h1>
           <p className="text-slate-500">Aqui está o resumo da operação hoje.</p>
         </div>
-        <div className="text-sm text-slate-500 bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm">
-          {new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="text-sm text-slate-500 bg-white px-4 py-2 rounded-lg sm:rounded-full border border-slate-200 shadow-sm text-center flex items-center justify-center">
+            {new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </div>
+          <Link to="/new-order" className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm">
+            <Plus size={18} />
+            Nova Solicitação
+          </Link>
         </div>
       </div>
 
@@ -234,7 +249,7 @@ export function Dashboard() {
             <option value="week">Últimos 7 dias</option>
           </select>
           <button 
-             onClick={() => window.location.reload()} // Simple refresh since 'realtime' is already active, but explicit refresh gives feedback
+             onClick={() => fetchOrders()}
              className="bg-mata text-white text-sm font-medium px-4 py-1.5 rounded-md hover:bg-mata/90 transition-colors shadow-sm"
           >
             Atualizar

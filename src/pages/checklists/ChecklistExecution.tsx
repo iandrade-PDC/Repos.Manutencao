@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import type { ChecklistItem } from '../../types/checklist';
 import { ChevronRight, Check, X, Camera, ArrowLeft, Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { uploadOrderPhoto } from '../../lib/utils';
 
 export function ChecklistExecution() {
   const { id } = useParams(); // Inspection ID (if resuming)
@@ -93,19 +94,7 @@ export function ChecklistExecution() {
   const handlePhotoUpload = async (itemId: string, file: File) => {
       try {
           setUploading(itemId);
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-          const filePath = `${user?.id}/${fileName}`;
-
-          const { error: uploadError } = await supabase.storage
-              .from('checklist-photos')
-              .upload(filePath, file);
-
-          if (uploadError) throw uploadError;
-
-          const { data: { publicUrl } } = supabase.storage
-              .from('checklist-photos')
-              .getPublicUrl(filePath);
+          const publicUrl = await uploadOrderPhoto(file);
 
           setResults(prev => ({
               ...prev,
@@ -233,40 +222,42 @@ export function ChecklistExecution() {
   );
 
   return (
-    <div className="max-w-2xl mx-auto pb-24 relative">
+    <div className="pb-24 relative">
       
       {/* Sticky Header */}
-      <div className="bg-white/95 backdrop-blur-sm p-4 border-b border-slate-200 shadow-sm sticky top-0 z-30 transition-all">
-        <div className="flex items-center gap-4 mb-2">
-            <button onClick={() => navigate('/checklists')} className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 rounded-full transition-colors">
-                <ArrowLeft size={20} />
-            </button>
-            <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-2">
-                    <span className="text-xs font-bold text-marinho uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-full whitespace-nowrap">
-                        Área {currentAreaIndex + 1}/{areas.length}
-                    </span>
-                    <h2 className="text-lg font-bold text-slate-800 truncate leading-tight">
-                        {currentArea}
-                    </h2>
-                </div>
-            </div>
-            <div className="text-right whitespace-nowrap">
-                <span className="text-xl font-bold text-marinho">{progress}%</span>
-            </div>
-        </div>
-        
-        {/* Progress Bar */}
-        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden w-full">
-            <div 
-                className="h-full bg-mata transition-all duration-300 ease-out"
-                style={{ width: `${progress}%` }}
-            />
+      <div className="bg-white/95 backdrop-blur-sm px-4 lg:px-6 py-4 border-b border-slate-200 shadow-sm sticky -top-4 lg:-top-6 -mx-4 lg:-mx-6 mb-4 z-30 transition-all">
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center gap-4 mb-2">
+              <button onClick={() => navigate('/checklists')} className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 rounded-full transition-colors">
+                  <ArrowLeft size={20} />
+              </button>
+              <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-2">
+                      <span className="text-xs font-bold text-marinho uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-full whitespace-nowrap">
+                          Área {currentAreaIndex + 1}/{areas.length}
+                      </span>
+                      <h2 className="text-lg font-bold text-slate-800 truncate leading-tight">
+                          {currentArea}
+                      </h2>
+                  </div>
+              </div>
+              <div className="text-right whitespace-nowrap">
+                  <span className="text-xl font-bold text-marinho">{progress}%</span>
+              </div>
+          </div>
+          
+          {/* Progress Bar */}
+          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden w-full">
+              <div 
+                  className="h-full bg-mata transition-all duration-300 ease-out"
+                  style={{ width: `${progress}%` }}
+              />
+          </div>
         </div>
       </div>
 
       {/* Items List */}
-      <div className="space-y-4 p-4">
+      <div className="max-w-2xl mx-auto space-y-4 px-1">
           {items.filter(i => i.area === currentArea).map(item => { // Filter here directly or use currentItems
               const result = results[item.id];
               const isOk = result?.status === 'ok';

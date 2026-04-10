@@ -17,9 +17,16 @@ export function Ranking() {
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
       try {
-        const orderDate = new Date(order.date); // order.date is usuallly YYYY-MM-DD string or ISO
-        const start = new Date(dateRange.start);
-        const end = new Date(dateRange.end);
+        if (!order.date) return false;
+        
+        const [year, month, day] = order.date.split('-');
+        const orderDate = new Date(Number(year), Number(month) - 1, Number(day));
+        
+        const [startYear, startMonth, startDay] = dateRange.start.split('-');
+        const start = new Date(Number(startYear), Number(startMonth) - 1, Number(startDay));
+        
+        const [endYear, endMonth, endDay] = dateRange.end.split('-');
+        const end = new Date(Number(endYear), Number(endMonth) - 1, Number(endDay));
         // Set end to end of day
         end.setHours(23, 59, 59, 999);
         

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Lock, User, AlertCircle, Phone } from 'lucide-react';
 
@@ -151,7 +151,17 @@ export function Login() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-marinho">Senha</label>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-marinho">Senha</label>
+              {!isSignUp && (
+                <Link
+                  to="/reset-password"
+                  className="text-xs text-marinho/60 hover:text-marinho font-medium transition-colors hover:underline"
+                >
+                  Esqueci minha senha
+                </Link>
+              )}
+            </div>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-marinho/40" size={20} />
               <input

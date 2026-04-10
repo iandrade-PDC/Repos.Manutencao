@@ -9,6 +9,7 @@ import { ResolveList } from './pages/ResolveList';
 import { Ranking } from './pages/Ranking';
 import { Profile } from './pages/Profile';
 import { Login } from './pages/Login';
+import { ResetPassword } from './pages/ResetPassword';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { OrdersProvider } from './contexts/OrdersContext';
@@ -30,6 +31,7 @@ function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               
               <Route element={<ProtectedRoute />}>
                 <Route element={<Layout />}>
