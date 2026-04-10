@@ -4,12 +4,10 @@ import { RankingList } from '../components/dashboard/RankingList';
 import { ActivityChart } from '../components/dashboard/ActivityChart';
 import { useState, useMemo, useEffect } from 'react';
 import { 
-  BarChart, Activity, Clock, Users, Calendar, 
-  ArrowUpRight, ArrowDownRight, CheckCircle2, AlertCircle, AlertTriangle, ArrowRight, RotateCcw, Plus
+  CheckCircle2, AlertCircle, AlertTriangle, ArrowRight, RotateCcw, Plus
 } from 'lucide-react';
 import { useOrders } from '../contexts/OrdersContext';
 import { useAuth } from '../contexts/AuthContext';
-import { cn } from '../lib/utils';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
