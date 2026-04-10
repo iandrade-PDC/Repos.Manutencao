@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { ChecklistTemplate } from '../../types/checklist';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardCheck, ArrowRight, MapPin, Plus, Trash2, Edit2, Download, FileText } from 'lucide-react';
+import { ClipboardCheck, ArrowRight, MapPin, Plus, Trash2, Edit2, Download } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { ChecklistPdfDocument } from '../../components/ChecklistPdfDocument';
