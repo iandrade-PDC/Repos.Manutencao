@@ -122,7 +122,7 @@ export function NewOrder() {
       
       addNotification({
         title: 'Erro',
-        message: 'Não foi possível salvar a solicitação. Tente novamente.',
+        message: 'Não foi possível salvar a solicitação: ' + (error instanceof Error ? error.message : JSON.stringify(error)),
         type: 'error'
       });
     } finally {

@@ -116,8 +116,8 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
         .insert({
           title: data.title,
           description: data.description,
-          requester: data.requester, // We store name for display, but ideally link to ID
-          requester_id: user.id,
+          requester: data.requester, 
+          // requester_id: user.id, // Removido para evitar erro PGRST204 (coluna ausente)
           date: data.date,
           time: data.time,
           location: data.location,
@@ -125,9 +125,9 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
           priority: data.priority,
           status: 'aberto',
           photos: photoUrls,
-          gut_g: (data as any).gut_g ?? null,
-          gut_u: (data as any).gut_u ?? null,
-          gut_t: (data as any).gut_t ?? null,
+          // gut_g: (data as any).gut_g ?? null,
+          // gut_u: (data as any).gut_u ?? null,
+          // gut_t: (data as any).gut_t ?? null,
         })
         .select()
         .single();

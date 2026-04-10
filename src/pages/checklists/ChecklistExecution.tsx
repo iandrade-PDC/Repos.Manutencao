@@ -164,7 +164,7 @@ export function ChecklistExecution() {
                   description: `Problema identificado. Obs: ${result.observation || 'Não informada'}`,
                   location: item.area || 'Localização Vistoria',
                   sector: 'Manutenção',
-                  requester_id: user?.id,
+                  // requester_id: user?.id,
                   requester: user?.name || 'Vistoria Check',
                   priority: 'alta', // Inspection failures are usually high priority
                   status: 'aberto',

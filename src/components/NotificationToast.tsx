@@ -62,7 +62,7 @@ export function NotificationToast() {
            
            <div className="flex-1">
                <h4 className="text-sm font-bold text-slate-800">{toast.title}</h4>
-               <p className="text-xs text-slate-600 mt-1 line-clamp-2">{toast.message}</p>
+               <p className="text-xs text-slate-600 mt-1 break-words">{toast.message}</p>
            </div>
 
            <button 
