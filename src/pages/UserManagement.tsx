@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Edit2, Shield, Mail, Search, Check, X } from 'lucide-react';
+import { Users, Edit2, Shield, Mail, Search, Check, X, Ban } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -81,6 +81,23 @@ export function UserManagement() {
     } catch (error: any) {
        console.error('Error approving user:', error);
        alert('Erro ao aprovar usuário: ' + (error.message || 'Erro desconhecido'));
+    }
+  };
+
+  const handleRevokeUser = async (userId: string) => {
+    if (!confirm('Tem certeza que deseja bloquear o acesso deste usuário? Ele não conseguirá mais entrar no aplicativo.')) return;
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ approved: false })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      setUsers(users.map(u => u.id === userId ? { ...u, approved: false } : u));
+    } catch (error: any) {
+       console.error('Error revoking user:', error);
+       alert('Erro ao bloquear usuário: ' + (error.message || 'Erro desconhecido'));
     }
   };
 
@@ -265,13 +282,24 @@ export function UserManagement() {
                          </>
                        ) : (
                         currentUser?.id !== user.id && (
-                          <button 
-                            onClick={() => startEditing(user)}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" 
-                            title="Alterar Permissão"
-                          >
-                            <Edit2 size={16} />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button 
+                              onClick={() => startEditing(user)}
+                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" 
+                              title="Alterar Permissão"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            {user.approved !== false && (
+                              <button 
+                                onClick={() => handleRevokeUser(user.id)}
+                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" 
+                                title="Bloquear Acesso"
+                              >
+                                <Ban size={16} />
+                              </button>
+                            )}
+                          </div>
                         )
                        )}
                     </div>
