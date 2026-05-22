@@ -137,72 +137,104 @@ export function DailyRoutine() {
         }
     };
 
-    const handleSave = async () => {
+    const handleTaskToggle = async (slug: string, checked: boolean) => {
+        if (!user) return;
+        
+        // Optimistic UI update
+        setTasks(prev => ({ ...prev, [slug]: checked }));
+        
+        const today = new Date().toISOString().split('T')[0];
+        try {
+            const { error } = await supabase
+                .from('daily_tasks_log')
+                .upsert({ 
+                    date: today, 
+                    task_slug: slug, 
+                    status: checked, 
+                    user_id: user.id 
+                }, { onConflict: 'date,task_slug' });
+                
+            if (error) throw error;
+            
+            // Show brief success indicator
+            setSaved(true);
+            setTimeout(() => setSaved(false), 2000);
+        } catch (error) {
+            console.error('Error saving task:', error);
+            // Revert on error
+            setTasks(prev => ({ ...prev, [slug]: !checked }));
+        }
+    };
+
+    const handleSaveReadings = async (type: 'water' | 'gas') => {
         if (!user) return;
         setLoading(true);
         setSaved(false);
         const today = new Date().toISOString().split('T')[0];
         
         try {
-            // 1. Save Tasks
-            const taskEntries = [
-                { date: today, task_slug: 'trash', status: tasks.trash, user_id: user.id },
-                { date: today, task_slug: 'fumace', status: tasks.fumace, user_id: user.id },
-                { date: today, task_slug: 'pool_clean', status: tasks.pool_clean, user_id: user.id },
-                { date: today, task_slug: 'pool_vacuum', status: tasks.pool_vacuum, user_id: user.id },
-                { date: today, task_slug: 'pool_chlorine', status: tasks.pool_chlorine, user_id: user.id },
-            ];
-            
-            if (observation) {
-                taskEntries.push({
-                    date: today,
-                    task_slug: 'general_obs',
-                    status: true,
-                    user_id: user.id,
-                    observation: observation
-                } as any);
-            }
-
-            const { error: taskError } = await supabase
-                .from('daily_tasks_log')
-                .upsert(taskEntries, { onConflict: 'date,task_slug' });
-
-            if (taskError) throw taskError;
-
-            // 2. Save Readings
+            const typeMeters = type === 'water' ? waterMeters : gasMeters;
             const readingsToInsert: any[] = [];
             
-            Object.entries(meterReadings).forEach(([name, value]) => {
-                if (!value) return;
-                
-                // Find meter type
-                const meter = meters.find(m => m.name === name);
-                const type = meter ? meter.type : (name.includes('Gás') ? 'gas' : 'water');
-                
-                readingsToInsert.push({
-                    date: today,
-                    type: type,
-                    location: name,
-                    value: Number(value),
-                    unit: type === 'gas' ? 'Kg/m³' : 'm³',
-                    user_id: user.id
-                });
+            typeMeters.forEach(meter => {
+                const value = meterReadings[meter.name];
+                if (value) {
+                    readingsToInsert.push({
+                        date: today,
+                        type: type,
+                        location: meter.name,
+                        value: Number(value),
+                        unit: type === 'gas' ? 'Kg/m³' : 'm³',
+                        user_id: user.id
+                    });
+                }
             });
 
             if (readingsToInsert.length > 0) {
-                 await supabase.from('daily_readings').delete().eq('date', today).eq('user_id', user.id);
+                 // Delete old readings of this type for today to avoid duplicates (team overwrite)
+                 await supabase.from('daily_readings')
+                     .delete()
+                     .eq('date', today)
+                     .eq('type', type);
+                     
                  const { error: readError } = await supabase.from('daily_readings').insert(readingsToInsert);
                  if (readError) throw readError;
             }
 
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
-            // Refresh history if it was open
             if (showHistory) fetchReadingHistory();
-
         } catch (error) {
-            console.error('Error saving daily routine:', error);
-            alert('Erro ao salvar rotina.');
+            console.error(`Error saving ${type} routine:`, error);
+            alert(`Erro ao salvar leituras de ${type === 'water' ? 'água' : 'gás'}.`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSaveObservation = async () => {
+        if (!user || !observation) return;
+        setLoading(true);
+        setSaved(false);
+        const today = new Date().toISOString().split('T')[0];
+        
+        try {
+            const { error } = await supabase
+                .from('daily_tasks_log')
+                .upsert({
+                    date: today,
+                    task_slug: 'general_obs',
+                    status: true,
+                    user_id: user.id,
+                    observation: observation
+                }, { onConflict: 'date,task_slug' });
+
+            if (error) throw error;
+            setSaved(true);
+            setTimeout(() => setSaved(false), 3000);
+        } catch (error) {
+            console.error('Error saving observation:', error);
+            alert('Erro ao salvar observação.');
         } finally {
             setLoading(false);
         }
@@ -270,6 +302,16 @@ export function DailyRoutine() {
                             </div>
                         ))}
                     </div>
+                    
+                    <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+                        <button 
+                            onClick={() => handleSaveReadings('water')}
+                            disabled={loading}
+                            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                            <Save size={18} /> Salvar Água
+                        </button>
+                    </div>
                 </div>
 
                 <div className="space-y-4">
@@ -300,6 +342,16 @@ export function DailyRoutine() {
                             ))}
                             {gasMeters.length === 0 && <p className="col-span-2 text-sm text-slate-400 italic">Nenhum ponto de gás configurado.</p>}
                         </div>
+
+                        <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+                            <button 
+                                onClick={() => handleSaveReadings('gas')}
+                                disabled={loading}
+                                className="w-full flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-lg transition-colors disabled:opacity-50"
+                            >
+                                <Save size={18} /> Salvar Gás
+                            </button>
+                        </div>
                     </div>
 
                     {/* BLOCO 3: Tarefas */}
@@ -313,7 +365,7 @@ export function DailyRoutine() {
                             <label className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${tasks.trash ? 'bg-green-50' : 'hover:bg-slate-50'}`}>
                                 <input type="checkbox" className="w-5 h-5 rounded text-green-600 focus:ring-green-500 border-slate-300"
                                     checked={tasks.trash}
-                                    onChange={e => setTasks({...tasks, trash: e.target.checked})}
+                                    onChange={e => handleTaskToggle('trash', e.target.checked)}
                                 />
                                 <div className="flex items-center gap-2">
                                     <Trash2 size={18} className={tasks.trash ? 'text-green-600' : 'text-slate-400'} />
@@ -325,7 +377,7 @@ export function DailyRoutine() {
                             <label className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${tasks.fumace ? 'bg-green-50' : 'hover:bg-slate-50'}`}>
                                 <input type="checkbox" className="w-5 h-5 rounded text-green-600 focus:ring-green-500 border-slate-300"
                                     checked={tasks.fumace}
-                                    onChange={e => setTasks({...tasks, fumace: e.target.checked})}
+                                    onChange={e => handleTaskToggle('fumace', e.target.checked)}
                                 />
                                 <div className="flex items-center gap-2">
                                     <Bug size={18} className={tasks.fumace ? 'text-green-600' : 'text-slate-400'} />
@@ -344,7 +396,7 @@ export function DailyRoutine() {
                                     <label key={item.key} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${tasks[item.key as keyof typeof tasks] ? 'bg-blue-50' : 'hover:bg-slate-50'}`}>
                                         <input type="checkbox" className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
                                             checked={tasks[item.key as keyof typeof tasks]}
-                                            onChange={(e) => setTasks({...tasks, [item.key]: e.target.checked})}
+                                            onChange={(e) => handleTaskToggle(item.key, e.target.checked)}
                                         />
                                         <span className={`text-sm font-medium ${tasks[item.key as keyof typeof tasks] ? 'text-blue-900' : 'text-slate-600'}`}>{item.label}</span>
                                     </label>
@@ -355,24 +407,24 @@ export function DailyRoutine() {
                 </div>
             </div>
 
-            {/* General Check & Save */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 flex items-center justify-between gap-4 md:relative md:bg-transparent md:border-0 md:p-0 px-4">
-                <div className="hidden md:block">
-                     <textarea 
-                        className="w-full p-3 border border-slate-200 rounded-lg text-sm bg-white min-w-[300px]"
-                        placeholder="Observações do dia..."
+            {/* General Observation */}
+            <div className="px-4 md:px-0">
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden p-4">
+                    <label className="text-sm font-bold text-slate-700 mb-2 block">Observações Gerais</label>
+                    <textarea 
+                        className="w-full p-3 border border-slate-200 rounded-lg text-sm bg-slate-50 min-h-[100px] mb-3 focus:bg-white focus:outline-none focus:ring-2 focus:ring-marinho/20 transition-all"
+                        placeholder="Alguma observação sobre o dia?"
                         value={observation}
                         onChange={e => setObservation(e.target.value)}
                     />
+                    <button 
+                        onClick={handleSaveObservation}
+                        disabled={loading || !observation}
+                        className="w-full flex items-center justify-center gap-2 bg-marinho hover:bg-marinho/90 text-white font-bold py-2.5 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                        <Save size={18} /> Salvar Observação
+                    </button>
                 </div>
-                <button 
-                    onClick={handleSave}
-                    disabled={loading}
-                    className="w-full md:w-auto bg-marinho text-white py-3.5 px-6 rounded-xl font-bold shadow-lg hover:bg-marinho/90 flex items-center justify-center gap-2 disabled:opacity-70 transition-transform active:scale-95 text-sm md:text-base"
-                >
-                    <Save size={20} />
-                    {loading ? 'Salvando...' : 'Finalizar Rotina'}
-                </button>
             </div>
             
             {/* HISTÓRICO DE LEITURAS */}
@@ -432,16 +484,6 @@ export function DailyRoutine() {
                 )}
             </div>
 
-            {/* Mobile Obs Input just above fixed footer */}
-            <div className="md:hidden px-4 mb-4">
-                <input 
-                    type="text"
-                    className="w-full p-4 border border-slate-200 rounded-xl text-sm bg-white shadow-sm"
-                    placeholder="Adicionar observação..."
-                    value={observation}
-                    onChange={e => setObservation(e.target.value)}
-                />
-            </div>
         </div>
     );
 }
