@@ -204,15 +204,76 @@ export function Ranking() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       
-      {/* Mobile Only Placeholder */}
-      <div className="md:hidden flex flex-col items-center justify-center p-12 text-center bg-white rounded-lg border border-slate-200 shadow-sm mt-4">
-        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-400">
-            <TrendingUp size={32} />
+      {/* Mobile View — KPIs + Listas */}
+      <div className="md:hidden space-y-4">
+        <div>
+          <h1 className="text-xl font-bold text-marinho">Relatórios</h1>
+          <p className="text-xs text-slate-500 mt-0.5">Métricas do período atual</p>
         </div>
-        <h2 className="text-lg font-bold text-slate-800 mb-2">Visualização Web</h2>
-        <p className="text-slate-500 text-sm max-w-xs">
-            Os relatórios detalhados e rankings estão disponíveis apenas na versão desktop para melhor visualização dos dados.
-        </p>
+
+        {/* KPI Cards — mobile */}
+        <div className="grid grid-cols-3 gap-2">
+          {stats.map((stat, i) => (
+            <div key={i} className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm">
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide leading-tight">{stat.label}</p>
+              <p className={`text-xl font-bold mt-1 ${stat.trend === 'good' ? 'text-mata' : stat.trend === 'bad' ? 'text-red-500' : 'text-marinho'}`}>
+                {stat.value}
+              </p>
+              <p className="text-[10px] text-slate-400 mt-0.5">{stat.subtext}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Top Locais — mobile */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
+            <MapPin size={16} className="text-blue-500" />
+            <h2 className="text-sm font-bold text-slate-800">Locais com Mais Chamados</h2>
+          </div>
+          <div className="divide-y divide-slate-50">
+            {topLocations.length > 0 ? topLocations.map((loc, i) => (
+              <div key={i} className="px-4 py-3">
+                <div className="flex justify-between items-center mb-1.5">
+                  <span className="text-sm font-semibold text-slate-700">{loc.name}</span>
+                  <span className="text-xs text-slate-400">{loc.count} • {loc.percent}%</span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500 rounded-full" style={{ width: `${loc.percent}%` }} />
+                </div>
+              </div>
+            )) : (
+              <p className="text-xs text-slate-400 text-center py-6">Nenhum dado neste período.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Desempenho Técnicos — mobile */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
+            <Trophy size={16} className="text-yellow-500" />
+            <h2 className="text-sm font-bold text-slate-800">Equipe Técnica</h2>
+          </div>
+          <div className="divide-y divide-slate-50">
+            {techPerformance.length > 0 ? techPerformance.slice(0, 5).map((tech, i) => (
+              <div key={i} className="px-4 py-3 flex items-center gap-3">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                  i === 0 ? 'bg-yellow-100 text-yellow-700' :
+                  i === 1 ? 'bg-slate-200 text-slate-600' :
+                  i === 2 ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-500'
+                }`}>
+                  {i + 1}
+                </div>
+                <span className="flex-1 text-sm font-medium text-slate-800 truncate">{tech.name}</span>
+                <div className="text-right">
+                  <span className="block text-base font-bold text-slate-800">{tech.resolved}</span>
+                  <span className="text-[10px] text-slate-400">chamados</span>
+                </div>
+              </div>
+            )) : (
+              <p className="text-xs text-slate-400 text-center py-6">Nenhum dado neste período.</p>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Desktop Content */}

@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { 
     Droplets, Flame, Trash2, Bug, Save, 
-    CalendarCheck, CheckCircle2 
+    CalendarCheck, CheckCircle2, ChevronDown, ChevronUp, History
 } from 'lucide-react';
 
 interface MeterPoint {
@@ -28,18 +28,35 @@ export function DailyRoutine() {
     // Tasks State
     const [tasks, setTasks] = useState({
         trash: false,
-        fumace: false, // Renamed from insecticide
+        fumace: false,
         pool_clean: false,
         pool_vacuum: false,
         pool_chlorine: false
     });
 
     const [observation, setObservation] = useState('');
+    const [showHistory, setShowHistory] = useState(false);
+    const [readingHistory, setReadingHistory] = useState<Array<{date: string, location: string, value: number, type: string}>>([]);
 
     useEffect(() => {
         fetchMeters();
         loadTodayData();
     }, []);
+
+    const fetchReadingHistory = async () => {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const since = sevenDaysAgo.toISOString().split('T')[0];
+
+        const { data } = await supabase
+            .from('daily_readings')
+            .select('date, location, value, type')
+            .gte('date', since)
+            .order('date', { ascending: false })
+            .order('location', { ascending: true });
+
+        if (data) setReadingHistory(data);
+    };
 
     const fetchMeters = async () => {
         const { data } = await supabase
@@ -123,6 +140,7 @@ export function DailyRoutine() {
     const handleSave = async () => {
         if (!user) return;
         setLoading(true);
+        setSaved(false);
         const today = new Date().toISOString().split('T')[0];
         
         try {
@@ -179,6 +197,8 @@ export function DailyRoutine() {
 
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
+            // Refresh history if it was open
+            if (showHistory) fetchReadingHistory();
 
         } catch (error) {
             console.error('Error saving daily routine:', error);
@@ -355,6 +375,63 @@ export function DailyRoutine() {
                 </button>
             </div>
             
+            {/* HISTÓRICO DE LEITURAS */}
+            <div className="px-4 md:px-0">
+                <button
+                    onClick={() => { setShowHistory(!showHistory); if (!showHistory) fetchReadingHistory(); }}
+                    className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left hover:bg-slate-50 transition-colors"
+                >
+                    <div className="flex items-center gap-2 font-semibold text-slate-700">
+                        <History size={18} className="text-slate-400" />
+                        Histórico de Leituras (7 dias)
+                    </div>
+                    {showHistory ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
+                </button>
+
+                {showHistory && (
+                    <div className="mt-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                        {readingHistory.length === 0 ? (
+                            <p className="text-sm text-slate-400 text-center py-8">Nenhuma leitura registrada nos últimos 7 dias.</p>
+                        ) : (
+                            (() => {
+                                // Group by date
+                                const byDate: Record<string, typeof readingHistory> = {};
+                                readingHistory.forEach(r => {
+                                    if (!byDate[r.date]) byDate[r.date] = [];
+                                    byDate[r.date].push(r);
+                                });
+                                return Object.entries(byDate).map(([date, readings]) => (
+                                    <div key={date} className="border-b border-slate-50 last:border-0">
+                                        <div className="px-4 py-2 bg-slate-50 flex items-center gap-2">
+                                            <CalendarCheck size={13} className="text-slate-400" />
+                                            <span className="text-xs font-bold text-slate-500">
+                                                {new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+                                            </span>
+                                        </div>
+                                        <div className="px-4 py-2 grid grid-cols-2 md:grid-cols-4 gap-2">
+                                            {readings.map((r, i) => (
+                                                <div key={i} className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
+                                                    <div className="flex items-center gap-1.5">
+                                                        {r.type === 'gas'
+                                                            ? <Flame size={12} className="text-orange-500 shrink-0" />
+                                                            : <Droplets size={12} className="text-blue-500 shrink-0" />
+                                                        }
+                                                        <span className="text-xs text-slate-600 truncate max-w-[80px]">{r.location}</span>
+                                                    </div>
+                                                    <span className="text-xs font-bold text-slate-800 ml-2 shrink-0">
+                                                        {r.value} {r.type === 'gas' ? 'kg' : 'm³'}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ));
+                            })()
+                        )}
+                    </div>
+                )}
+            </div>
+
             {/* Mobile Obs Input just above fixed footer */}
             <div className="md:hidden px-4 mb-4">
                 <input 

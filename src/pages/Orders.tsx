@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, Calendar, AlertCircle, CheckCircle2, Clock, Eye, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
 import { cn, formatOrderId } from '../lib/utils';
+import { useDebounce } from '../lib/useDebounce';
 
 import { PRIORITIES, LOCATION_DATA } from '../data/locations';
 import { useOrders } from '../contexts/OrdersContext';
@@ -10,7 +11,8 @@ const PAGE_SIZE = 20;
 
 export function Orders() {
   const { orders } = useOrders();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [rawSearch, setRawSearch] = useState('');
+  const searchTerm = useDebounce(rawSearch, 280);
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
     priority: '',
@@ -20,7 +22,7 @@ export function Orders() {
   });
 
   const resetPage = useCallback(() => setCurrentPage(1), []);
-  const handleSearch = (val: string) => { setSearchTerm(val); resetPage(); };
+  const handleSearch = (val: string) => { setRawSearch(val); resetPage(); };
   const handleFilter = (key: string, val: string) => { setFilters(f => ({ ...f, [key]: val })); resetPage(); };
 
   const allFiltered = useMemo(() => {
@@ -129,7 +131,7 @@ export function Orders() {
             type="text"
             placeholder="Buscar por ID, título..."
             className="w-full pl-9 pr-3 py-2 rounded-md border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-marinho bg-slate-50"
-            value={searchTerm}
+            value={rawSearch}
             onChange={e => handleSearch(e.target.value)}
           />
         </div>
@@ -231,7 +233,7 @@ export function Orders() {
                       <Filter size={32} className="text-slate-300" />
                       <p>Nenhuma ordem encontrada com os filtros selecionados.</p>
                       <button 
-                        onClick={() => {setFilters({priority: '', date: '', location: '', status: ''}); setSearchTerm(''); resetPage();}}
+                        onClick={() => {setFilters({priority: '', date: '', location: '', status: ''}); setRawSearch(''); resetPage();}}
                         className="text-blue-600 hover:underline text-sm font-medium"
                       >
                         Limpar Filtros

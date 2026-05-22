@@ -2,13 +2,15 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Wrench, Clock, CheckCircle2, MapPin, FileDown, Loader2, ListTodo, History } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useDebounce } from '../lib/useDebounce';
 import { pdf } from '@react-pdf/renderer';
 import { OrderPdfDocument } from '../components/OrderPdfDocument';
 import { useOrders } from '../contexts/OrdersContext';
 
 export function ResolveList() {
   const { orders, loading } = useOrders();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [rawSearch, setRawSearch] = useState('');
+  const searchTerm = useDebounce(rawSearch, 280);
   const [activeTab, setActiveTab] = useState<'pending' | 'resolved'>('pending');
 
   const filteredOrders = useMemo(() => {
@@ -96,8 +98,8 @@ export function ResolveList() {
             type="text"
             placeholder="Buscar chamado..."
             className="w-full pl-9 pr-3 py-2 rounded-md border border-marinho/20 text-sm focus:outline-none focus:ring-2 focus:ring-marinho/20 text-marinho bg-white placeholder-marinho/40"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            value={rawSearch}
+            onChange={e => setRawSearch(e.target.value)}
           />
         </div>
       </div>

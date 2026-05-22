@@ -18,6 +18,8 @@ export function ResolveOrder() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [compressing, setCompressing] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   
   // Default values
   const [formData, setFormData] = useState({
@@ -39,37 +41,48 @@ export function ResolveOrder() {
 
   const handlePhotoChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      try {
-        const options = {
-          maxSizeMB: 0.5, // 500KB max
-          maxWidthOrHeight: 1280,
-          useWebWorker: true
-        };
-        const compressedFile = await imageCompression(file, options);
-        const compressedFileObj = new File([compressedFile], file.name, {
-          type: compressedFile.type,
-          lastModified: Date.now(),
-        });
-        
-        setPhotoFile(compressedFileObj);
-        
-        // Generate preview from the compressed file
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPhotoPreview(reader.result as string);
-        };
-        reader.readAsDataURL(compressedFileObj);
-      } catch (error) {
-        console.error("Error compressing image:", error);
-        // Fallback to original
-        setPhotoFile(file);
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPhotoPreview(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-      }
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setPhotoError('Apenas imagens são aceitas (JPG, PNG, HEIC).');
+      return;
+    }
+    // Validate size (max 20MB before compression)
+    if (file.size > 20 * 1024 * 1024) {
+      setPhotoError('Arquivo muito grande. Máximo 20 MB.');
+      return;
+    }
+
+    setPhotoError(null);
+    setCompressing(true);
+
+    try {
+      const options = {
+        maxSizeMB: 0.5,
+        maxWidthOrHeight: 1280,
+        useWebWorker: true
+      };
+      const compressedFile = await imageCompression(file, options);
+      const compressedFileObj = new File([compressedFile], file.name, {
+        type: compressedFile.type,
+        lastModified: Date.now(),
+      });
+
+      setPhotoFile(compressedFileObj);
+
+      const reader = new FileReader();
+      reader.onloadend = () => setPhotoPreview(reader.result as string);
+      reader.readAsDataURL(compressedFileObj);
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      // Fallback: use original
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setPhotoPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    } finally {
+      setCompressing(false);
     }
   };
 
@@ -240,15 +253,21 @@ export function ResolveOrder() {
             <label className="text-sm font-semibold text-slate-700">Foto da Finalização (Opcional)</label>
             
             <div className="flex gap-4 items-start">
-              {photoPreview ? (
+              {compressing ? (
+                <div className="flex-1 border-2 border-dashed border-blue-300 rounded-lg p-6 flex flex-col items-center justify-center text-blue-500 h-32 bg-blue-50/30 animate-pulse">
+                  <Loader2 size={24} className="animate-spin mb-2" />
+                  <span className="text-sm font-medium">Comprimindo imagem...</span>
+                  <span className="text-xs text-blue-400 mt-1">Otimizando para envio</span>
+                </div>
+              ) : photoPreview ? (
                 <div className="relative w-full h-48 md:w-64 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 group">
                   <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-white text-xs py-1 px-2 text-center">
+                    {photoFile ? `${(photoFile.size / 1024).toFixed(0)} KB` : ''}
+                  </div>
                   <button
                     type="button"
-                    onClick={() => {
-                        setPhotoPreview(null);
-                        setPhotoFile(null);
-                    }}
+                    onClick={() => { setPhotoPreview(null); setPhotoFile(null); }}
                     className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <X size={16} />
@@ -258,36 +277,47 @@ export function ResolveOrder() {
                 <label className="flex-1 border-2 border-dashed border-slate-300 rounded-lg p-6 flex flex-col items-center justify-center text-slate-400 hover:border-marinho hover:text-marinho hover:bg-areia/20 cursor-pointer transition-all h-32">
                   <Upload size={24} className="mb-2" />
                   <span className="text-sm font-medium">Clique para adicionar foto</span>
-                  <input 
-                    type="file" 
-                    className="hidden" 
-                    accept="image/*" 
-                    onChange={handlePhotoChange} 
+                  <span className="text-xs mt-1 text-slate-300">JPG, PNG, HEIC — máx. 20 MB</span>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
                   />
                 </label>
               )}
             </div>
+            {photoError && (
+              <p className="mt-2 text-xs text-red-600 flex items-center gap-1">
+                <span className="font-bold">⚠</span> {photoError}
+              </p>
+            )}
           </div>
 
         </div>
 
         {/* Footer Actions */}
         <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={() => navigate(-1)}
-            disabled={loading}
+            disabled={loading || compressing}
             className="px-4 py-2 text-slate-700 font-medium hover:bg-slate-200 rounded-md transition-colors disabled:opacity-50"
           >
             Cancelar
           </button>
-          <button 
+          <button
             type="submit"
-            disabled={loading}
+            disabled={loading || compressing}
             className="flex items-center gap-2 px-6 py-2 bg-mata hover:bg-mata/90 text-white font-medium rounded-md shadow-sm transition-colors disabled:opacity-50"
           >
-            {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-            Concluir Chamado
+            {loading ? (
+              <><Loader2 size={18} className="animate-spin" /> {photoFile ? 'Enviando foto...' : 'Salvando...'}</>
+            ) : compressing ? (
+              <><Loader2 size={18} className="animate-spin" /> Processando foto...</>
+            ) : (
+              <><Save size={18} /> Concluir Chamado</>
+            )}
           </button>
         </div>
 
