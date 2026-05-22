@@ -1,23 +1,29 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Filter, Calendar, AlertCircle, CheckCircle2, Clock, Eye } from 'lucide-react';
+import { Search, Filter, Calendar, AlertCircle, CheckCircle2, Clock, Eye, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
 import { cn, formatOrderId } from '../lib/utils';
 
-import { PRIORITIES } from '../data/locations';
+import { PRIORITIES, LOCATION_DATA } from '../data/locations';
 import { useOrders } from '../contexts/OrdersContext';
+
+const PAGE_SIZE = 20;
 
 export function Orders() {
   const { orders } = useOrders();
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
     priority: '',
     date: '',
-    sector: '',
+    location: '',
     status: '',
   });
 
-  // Unique sectors for filter dropdown
-  const filteredOrders = useMemo(() => {
+  const resetPage = useCallback(() => setCurrentPage(1), []);
+  const handleSearch = (val: string) => { setSearchTerm(val); resetPage(); };
+  const handleFilter = (key: string, val: string) => { setFilters(f => ({ ...f, [key]: val })); resetPage(); };
+
+  const allFiltered = useMemo(() => {
     return orders.filter(order => {
       const formattedId = order.short_id ? formatOrderId(order.short_id) : (order.id || '');
       const matchesSearch = (order.title || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -27,20 +33,21 @@ export function Orders() {
       
       const matchesPriority = filters.priority ? order.priority === filters.priority : true;
       const matchesDate = filters.date ? order.date === filters.date : true;
-      // const matchesSector = filters.sector ? order.sector === filters.sector : true; // Removed Sector Filter
+      const matchesLocation = filters.location ? order.location === filters.location : true;
       const matchesStatus = filters.status ? order.status === filters.status : true;
 
-      return matchesSearch && matchesPriority && matchesDate && matchesStatus;
+      return matchesSearch && matchesPriority && matchesDate && matchesLocation && matchesStatus;
     }).sort((a, b) => {
       const scoreA = a.gut_score || 0;
       const scoreB = b.gut_score || 0;
-      if (scoreA !== scoreB) {
-        return scoreB - scoreA;
-      }
-      // Fallback to date sorting if scores are equal or zero
+      if (scoreA !== scoreB) return scoreB - scoreA;
       return new Date(b.created_at || b.date).getTime() - new Date(a.created_at || a.date).getTime();
     });
   }, [searchTerm, filters, orders]);
+
+  const totalPages = Math.max(1, Math.ceil(allFiltered.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const filteredOrders = allFiltered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const getPriorityBadge = (priority: string) => {
     const priorityConfig = PRIORITIES.find(p => p.value === priority);
@@ -123,7 +130,7 @@ export function Orders() {
             placeholder="Buscar por ID, título..."
             className="w-full pl-9 pr-3 py-2 rounded-md border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-marinho bg-slate-50"
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={e => handleSearch(e.target.value)}
           />
         </div>
 
@@ -131,7 +138,7 @@ export function Orders() {
         <select
           className="hidden md:block w-full px-3 py-2 rounded-md border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
           value={filters.priority}
-          onChange={e => setFilters({...filters, priority: e.target.value})}
+          onChange={e => handleFilter('priority', e.target.value)}
         >
           <option value="">Todas Prioridades</option>
           <option value="baixa">Baixa</option>
@@ -140,11 +147,11 @@ export function Orders() {
           <option value="urgente">Urgente</option>
         </select>
 
-        {/* Status Filter (Replaces Sector) */}
+        {/* Status Filter */}
         <select
           className="hidden md:block w-full px-3 py-2 rounded-md border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
           value={filters.status}
-          onChange={e => setFilters({...filters, status: e.target.value})}
+          onChange={e => handleFilter('status', e.target.value)}
         >
           <option value="">Todos os Status</option>
           <option value="aberto">Aberto</option>
@@ -152,15 +159,19 @@ export function Orders() {
           <option value="concluido">Concluído</option>
         </select>
 
-        {/* Date Filter */}
+        {/* Location Filter */}
         <div className="hidden md:block relative">
-          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-          <input
-            type="date"
-            className="w-full pl-9 pr-3 py-2 rounded-md border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-500"
-            value={filters.date}
-            onChange={e => setFilters({...filters, date: e.target.value})}
-          />
+          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <select
+            className="w-full pl-9 pr-3 py-2 rounded-md border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white appearance-none"
+            value={filters.location}
+            onChange={e => handleFilter('location', e.target.value)}
+          >
+            <option value="">Todos os Locais</option>
+            {Object.keys(LOCATION_DATA).map(loc => (
+              <option key={loc} value={loc}>{loc}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -220,7 +231,7 @@ export function Orders() {
                       <Filter size={32} className="text-slate-300" />
                       <p>Nenhuma ordem encontrada com os filtros selecionados.</p>
                       <button 
-                        onClick={() => {setFilters({priority: '', date: '', sector: '', status: ''}); setSearchTerm('')}}
+                        onClick={() => {setFilters({priority: '', date: '', location: '', status: ''}); setSearchTerm(''); resetPage();}}
                         className="text-blue-600 hover:underline text-sm font-medium"
                       >
                         Limpar Filtros
@@ -272,12 +283,49 @@ export function Orders() {
         </div>
 
         
-        {/* Pagination Footer (Static) */}
+        {/* Pagination Footer */}
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
-          <span>Mostrando {filteredOrders.length} de {orders.length} resultados</span>
-          <div className="flex gap-2">
-            <button disabled className="px-3 py-1 rounded border border-slate-200 bg-white disabled:opacity-50">Anterior</button>
-            <button disabled className="px-3 py-1 rounded border border-slate-200 bg-white disabled:opacity-50">Próxima</button>
+          <span>Mostrando {((safePage - 1) * PAGE_SIZE) + 1}–{Math.min(safePage * PAGE_SIZE, allFiltered.length)} de {allFiltered.length} resultados</span>
+          <div className="flex items-center gap-1">
+            <button
+              disabled={safePage <= 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+              className="p-1.5 rounded border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(p => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
+              .reduce<(number | '...')[]>((acc, p, i, arr) => {
+                if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push('...');
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((item, i) =>
+                item === '...' ? (
+                  <span key={`e-${i}`} className="px-2 text-slate-400">…</span>
+                ) : (
+                  <button
+                    key={item}
+                    onClick={() => setCurrentPage(item as number)}
+                    className={cn(
+                      'w-7 h-7 rounded border text-xs font-medium transition-colors',
+                      safePage === item
+                        ? 'bg-marinho text-white border-marinho'
+                        : 'bg-white border-slate-200 hover:bg-slate-100 text-slate-600'
+                    )}
+                  >
+                    {item}
+                  </button>
+                )
+              )}
+            <button
+              disabled={safePage >= totalPages}
+              onClick={() => setCurrentPage(p => p + 1)}
+              className="p-1.5 rounded border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight size={16} />
+            </button>
           </div>
         </div>
       </div>

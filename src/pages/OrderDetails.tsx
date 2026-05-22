@@ -1,9 +1,11 @@
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, MapPin, User, Calendar, Clock, MessageSquare, CheckCircle2, Package, ImageIcon, Trash2 } from 'lucide-react';
+import { ArrowLeft, MapPin, User, Calendar, Clock, MessageSquare, CheckCircle2, Package, ImageIcon, Trash2, FileDown, Loader2, PlayCircle } from 'lucide-react';
 import { cn, formatOrderId } from '../lib/utils';
 import { useMemo, useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase'; // Import Supabase
+import { supabase } from '../lib/supabase';
+import { pdf } from '@react-pdf/renderer';
+import { OrderPdfDocument } from '../components/OrderPdfDocument';
 
 import { useOrders } from '../contexts/OrdersContext';
 
@@ -11,7 +13,7 @@ export function OrderDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { canEditDemands, canManageUsers } = useAuth(); // Add canManageUsers (Admin check)
+  const { user, canEditDemands, canManageUsers } = useAuth();
   const { orders, loading, fetchOrders } = useOrders(); // Add fetchOrders to refresh after delete
   
   const foundOrder = useMemo(() => orders.find(o => o.id === id), [orders, id]);
@@ -55,25 +57,69 @@ export function OrderDetails() {
     }
   }, [location.state]);
 
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [markingInProgress, setMarkingInProgress] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    if (!order) return;
+    try {
+      setGeneratingPdf(true);
+      const blob = await pdf(<OrderPdfDocument order={order} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const displayId = order.short_id ? formatOrderId(order.short_id) : order.id.substring(0, 8);
+      link.download = `OS_${displayId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Erro ao gerar PDF:', err);
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
+
+  const handleMarkInProgress = async () => {
+    if (!id || order?.status !== 'aberto') return;
+    try {
+      setMarkingInProgress(true);
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'em_andamento' })
+        .eq('id', id);
+      if (error) throw error;
+      await supabase.from('order_logs').insert({
+        order_id: id,
+        user_id: user?.id ?? null,
+        title: 'Atendimento Iniciado',
+        description: `Chamado assumido por ${user?.name || 'Técnico'}`,
+        type: 'status_change',
+      });
+      fetchOrders();
+    } catch (err: any) {
+      console.error('Erro ao atualizar status:', err);
+    } finally {
+      setMarkingInProgress(false);
+    }
+  };
+
   const handleDeleteOrder = async () => {
     if (!id) return;
-    
-    if (confirm('TEM CERTEZA? Esta ação não pode ser desfeita. A ordem será excluída permanentemente.')) {
-      try {
-        const { error } = await supabase
-          .from('orders')
-          .delete()
-          .eq('id', id);
-
-        if (error) throw error;
-
-        alert('Ordem excluída com sucesso.');
-        fetchOrders(); // Refresh global list
-        navigate('/orders');
-      } catch (err: any) {
-        console.error('Erro ao excluir:', err);
-        alert('Erro ao excluir ordem: ' + err.message);
-      }
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      fetchOrders();
+      navigate('/orders');
+    } catch (err: any) {
+      console.error('Erro ao excluir:', err);
+    } finally {
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -276,24 +322,59 @@ export function OrderDetails() {
 
           {/* Action Buttons */}
           <div className="space-y-3">
-             <button 
-                onClick={() => navigate(`/orders/${id}/resolve`)}
-                disabled={order.status === 'concluido' || !canEditDemands()}
-                className="w-full bg-mata hover:bg-mata/90 text-white font-medium py-3 px-4 rounded-md shadow-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+
+             {/* Baixar PDF */}
+             <button
+               onClick={handleDownloadPdf}
+               disabled={generatingPdf}
+               className="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium py-2.5 px-4 rounded-md shadow-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+             >
+               {generatingPdf ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />}
+               {generatingPdf ? 'Gerando PDF...' : 'Baixar PDF da OS'}
+             </button>
+
+             {/* Marcar Em Andamento */}
+             {order.status === 'aberto' && canEditDemands() && (
+               <button
+                 onClick={handleMarkInProgress}
+                 disabled={markingInProgress}
+                 className="w-full bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-medium py-2.5 px-4 rounded-md shadow-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+               >
+                 {markingInProgress ? <Loader2 size={16} className="animate-spin" /> : <PlayCircle size={16} />}
+                 Iniciar Atendimento
+               </button>
+             )}
+
+             {/* Resolver */}
+             <button
+               onClick={() => navigate(`/orders/${id}/resolve`)}
+               disabled={order.status === 'concluido' || !canEditDemands()}
+               className="w-full bg-mata hover:bg-mata/90 text-white font-medium py-3 px-4 rounded-md shadow-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
              >
                <CheckCircle2 size={18} />
-               {order.status === 'concluido' ? 'Ordem Resolvida' : 'Resolver Ordem'}
+               {order.status === 'concluido' ? 'Ordem Resolvida' : 'Finalizar Chamado'}
              </button>
-             
-             {/* Delete Button (Admins only) */}
+
+             {/* Delete - Com modal de confirmação inline */}
              {canManageUsers() && (
-                <button 
-                   onClick={handleDeleteOrder}
-                   className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-medium py-2 px-4 rounded-md border border-red-200 shadow-sm transition-colors flex items-center justify-center gap-2 mt-4"
-                >
-                   <Trash2 size={16} />
-                   Excluir Ordem
-                </button>
+               <div className="mt-2">
+                 {!showDeleteConfirm ? (
+                   <button
+                     onClick={() => setShowDeleteConfirm(true)}
+                     className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-medium py-2 px-4 rounded-md border border-red-200 shadow-sm transition-colors flex items-center justify-center gap-2"
+                   >
+                     <Trash2 size={16} /> Excluir Ordem
+                   </button>
+                 ) : (
+                   <div className="bg-red-50 border border-red-200 rounded-md p-3 space-y-2">
+                     <p className="text-xs font-bold text-red-700 text-center">Confirmar exclusão permanente?</p>
+                     <div className="flex gap-2">
+                       <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 py-1.5 text-sm border border-slate-200 rounded text-slate-600 hover:bg-slate-50">Cancelar</button>
+                       <button onClick={handleDeleteOrder} className="flex-1 py-1.5 text-sm bg-red-600 text-white rounded hover:bg-red-700 font-bold">Excluir</button>
+                     </div>
+                   </div>
+                 )}
+               </div>
              )}
           </div>
         </div>
