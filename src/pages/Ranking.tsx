@@ -43,48 +43,18 @@ export function Ranking() {
     const completed = filteredOrders.filter(o => o.status === 'concluido').length;
     const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-    // Calculate Average Time
-    let totalMinutes = 0;
-    let resolvedCountWithTime = 0;
-
+    // Calculate Top Location for the KPI Card
+    let mostFrequentLoc = 'N/A';
+    let maxLocCount = 0;
+    const globalLocMap: Record<string, number> = {};
     filteredOrders.forEach(o => {
-        if (o.status === 'concluido') {
-            const createdLog = o.history?.find((h: any) => h.type === 'creation');
-            const resolvedLog = o.history?.find((h: any) => h.type === 'resolution');
-            
-            // Try to deduce timestamps
-            let start: Date | null = null;
-            let end: Date | null = null;
-
-            if (createdLog) start = new Date(createdLog.created_at);
-            else {
-                // Determine via order date fields (less precise but fallback)
-                // Assuming "date" and "time" fields are creation time
-                const dateTimeStr = `${o.date}T${o.time}`;
-                // Validating basic format or just constructing Date
-                const d = new Date(dateTimeStr);
-                if (!isNaN(d.getTime())) start = d;
-            }
-
-            if (resolvedLog) end = new Date(resolvedLog.created_at);
-            // We can add fallback for resolution date if we stored it in 'details.date + time', but log created_at usually suffices.
-
-            if (start && end && end > start) {
-                const diffMs = end.getTime() - start.getTime();
-                const diffMins = diffMs / (1000 * 60);
-                totalMinutes += diffMins;
-                resolvedCountWithTime++;
-            }
+        const loc = o.location || 'Não informado';
+        globalLocMap[loc] = (globalLocMap[loc] || 0) + 1;
+        if (globalLocMap[loc] > maxLocCount) {
+            maxLocCount = globalLocMap[loc];
+            mostFrequentLoc = loc;
         }
     });
-
-    let avgTimeDisplay = 'N/A';
-    if (resolvedCountWithTime > 0) {
-        const avgMins = totalMinutes / resolvedCountWithTime;
-        const hours = Math.floor(avgMins / 60);
-        const mins = Math.round(avgMins % 60);
-        avgTimeDisplay = `${hours}h ${mins}m`;
-    }
 
     return [
       { 
@@ -102,11 +72,11 @@ export function Ranking() {
         icon: TrendingUp 
       },
       { 
-        label: 'Tempo Médio (Est.)', 
-        value: avgTimeDisplay, 
-        subtext: 'Baseado no histórico', 
-        trend: 'good', 
-        icon: Clock 
+        label: 'Local Mais Crítico', 
+        value: mostFrequentLoc, 
+        subtext: `${maxLocCount} chamados`, 
+        trend: 'bad', 
+        icon: MapPin 
       },
     ];
   }, [filteredOrders]);
@@ -151,49 +121,41 @@ export function Ranking() {
 
   // Real Technician Performance based on History Logs
   const techPerformance = useMemo(() => {
-    const techMap: Record<string, { resolved: number, totalMinutes: number }> = {};
+    const techMap: Record<string, { resolved: number, locations: Record<string, number> }> = {};
 
     filteredOrders.forEach(order => {
         if (order.status === 'concluido' && order.history) {
             const resolution = order.history.find((h: any) => h.type === 'resolution');
-            const creation = order.history.find((h: any) => h.type === 'creation');
 
             if (resolution && resolution.details?.resolver) {
                 const resolverName = resolution.details.resolver;
+                const loc = order.location || 'Não informado';
                 
                 if (!techMap[resolverName]) {
-                    techMap[resolverName] = { resolved: 0, totalMinutes: 0 };
+                    techMap[resolverName] = { resolved: 0, locations: {} };
                 }
                 techMap[resolverName].resolved += 1;
-
-                // Time calc
-                let start: Date | null = null;
-                const end = new Date(resolution.created_at);
-
-                if (creation) start = new Date(creation.created_at);
-                else {
-                    const d = new Date(`${order.date}T${order.time}`);
-                    if (!isNaN(d.getTime())) start = d;
-                }
-
-                if (start && end && end > start) {
-                    const diffMins = (end.getTime() - start.getTime()) / (1000 * 60);
-                    techMap[resolverName].totalMinutes += diffMins;
-                }
+                techMap[resolverName].locations[loc] = (techMap[resolverName].locations[loc] || 0) + 1;
             }
         }
     });
 
     return Object.entries(techMap)
         .map(([name, data]) => {
-            const avgMins = data.resolved > 0 ? data.totalMinutes / data.resolved : 0;
-            const h = Math.floor(avgMins / 60);
-            const m = Math.round(avgMins % 60);
+            // Find top location for this tech
+            let topLoc = 'N/A';
+            let maxCount = 0;
+            Object.entries(data.locations).forEach(([loc, count]) => {
+                if (count > maxCount) {
+                    maxCount = count;
+                    topLoc = loc;
+                }
+            });
 
             return {
                 name,
                 resolved: data.resolved,
-                avgTime: data.totalMinutes > 0 ? `${h}h ${m}m` : 'N/A'
+                topLocation: topLoc
             };
         })
         .sort((a, b) => b.resolved - a.resolved);
@@ -398,7 +360,7 @@ export function Ranking() {
                 <tr>
                     <th className="px-4 py-3 rounded-l-md">Técnico</th>
                     <th className="px-4 py-3">Chamados Resolvidos</th>
-                    <th className="px-4 py-3 rounded-r-md">Tempo Médio (em breve)</th>
+                    <th className="px-4 py-3 rounded-r-md">Setor Principal</th>
                 </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -406,7 +368,7 @@ export function Ranking() {
                     <tr key={i}>
                     <td className="px-4 py-3 font-medium text-slate-800">{tech.name}</td>
                     <td className="px-4 py-3">{tech.resolved}</td>
-                    <td className="px-4 py-3 text-slate-400">{tech.avgTime}</td>
+                    <td className="px-4 py-3 text-slate-500 font-medium">{tech.topLocation}</td>
                     </tr>
                 )) : (
                     <tr>

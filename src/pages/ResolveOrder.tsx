@@ -1,6 +1,6 @@
 import { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Upload, X, Calendar, Clock, User, Package, MessageSquare, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Upload, X, Calendar, Clock, User, Package, MessageSquare, Loader2, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { uploadOrderPhoto, formatOrderId } from '../lib/utils';
@@ -10,9 +10,9 @@ import imageCompression from 'browser-image-compression';
 export function ResolveOrder() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, canManageUsers } = useAuth();
   const { addNotification } = useNotifications();
-  const { orders } = useOrders();
+  const { orders, fetchOrders } = useOrders();
   const order = orders.find(o => o.id === id);
   
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -20,6 +20,8 @@ export function ResolveOrder() {
   const [loading, setLoading] = useState(false);
   const [compressing, setCompressing] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   
   // Default values
   const [formData, setFormData] = useState({
@@ -83,6 +85,36 @@ export function ResolveOrder() {
       reader.readAsDataURL(file);
     } finally {
       setCompressing(false);
+    }
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!id) return;
+    try {
+      setDeleting(true);
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      
+      addNotification({
+        title: 'Ordem Excluída',
+        message: 'A ordem de serviço foi apagada com sucesso.',
+        type: 'success'
+      });
+      fetchOrders();
+      navigate('/orders');
+    } catch (err: any) {
+      console.error('Erro ao excluir:', err);
+      addNotification({
+        title: 'Erro ao excluir',
+        message: 'Ocorreu um erro ao apagar a ordem.',
+        type: 'error'
+      });
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -158,12 +190,47 @@ export function ResolveOrder() {
         >
           <ArrowLeft size={20} />
         </button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-xl font-bold text-marinho">
             Finalizar Chamado #{order ? (order.short_id ? formatOrderId(order.short_id) : order.id.substring(0,8)) : id?.substring(0,8)}
           </h1>
           <p className="text-sm text-marinho/60">Preencha os dados da resolução para fechar a ordem de serviço.</p>
         </div>
+        
+        {canManageUsers() && (
+          <div className="relative">
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-md text-sm font-bold transition-colors"
+              >
+                <Trash2 size={16} />
+                <span className="hidden sm:inline">Excluir</span>
+              </button>
+            ) : (
+              <div className="absolute right-0 top-0 bg-white border border-red-200 rounded-lg shadow-lg p-3 w-64 z-10 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+                <p className="text-xs font-bold text-slate-800 mb-2">Excluir chamado permanentemente?</p>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setShowDeleteConfirm(false)} 
+                    className="flex-1 py-1.5 text-xs border border-slate-200 rounded hover:bg-slate-50 font-medium"
+                    disabled={deleting}
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    onClick={handleDeleteOrder} 
+                    className="flex-1 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700 font-bold flex justify-center items-center gap-1"
+                    disabled={deleting}
+                  >
+                    {deleting ? <Loader2 size={12} className="animate-spin" /> : null}
+                    Confirmar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-marinho/10 shadow-sm overflow-hidden">

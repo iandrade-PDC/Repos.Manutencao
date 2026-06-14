@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import type { TiRole } from '../types/ti';
 
 interface User {
   id: string;
@@ -10,6 +11,7 @@ interface User {
   approved: boolean; 
   sector?: string; // Add sector field
   phone?: string; // Add phone field
+  ti_role?: TiRole | null; // Módulo TI: 'tecnico' | 'colaborador'
 }
 
 interface AuthContextType {
@@ -20,6 +22,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   canManageUsers: () => boolean;
   canEditDemands: () => boolean;
+  isTiTecnico: () => boolean;
+  isTiColaborador: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -84,7 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           avatar: data.avatar_url,
           approved: data.approved !== false,
           sector: data.sector,
-          phone: data.phone // Store phone
+          phone: data.phone, // Store phone
+          ti_role: data.ti_role || null, // Módulo TI
         });
       }
     } catch (err) {
@@ -131,8 +136,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const canManageUsers = () => user?.role === 'admin';
   const canEditDemands = () => user?.role === 'admin' || user?.role === 'leader' || user?.sector === 'Manutenção';
 
+  // Módulo TI: helpers de role
+  const isTiTecnico = () => user?.ti_role === 'tecnico';
+  const isTiColaborador = () => user?.ti_role === 'colaborador';
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, signUp, logout, canManageUsers, canEditDemands }}>
+    <AuthContext.Provider value={{ user, loading, login, signUp, logout, canManageUsers, canEditDemands, isTiTecnico, isTiColaborador }}>
       {!loading && children}
     </AuthContext.Provider>
   );

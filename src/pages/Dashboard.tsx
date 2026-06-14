@@ -213,23 +213,42 @@ export function Dashboard() {
       </div>
 
       {/* Daily Routine Alert */}
-      {dailyPending && (
-          <Link to="/daily" className="group bg-orange-50 border border-orange-200 rounded-xl p-3 sm:p-4 flex items-center justify-between hover:bg-orange-100 transition-colors animate-in slide-in-from-top-2 shadow-sm">
-              <div className="flex items-center gap-3">
-                  <div className="bg-orange-100 p-2 rounded-full text-orange-600 group-hover:bg-white transition-colors shrink-0">
-                      <AlertTriangle size={18} />
-                  </div>
-                  <div>
-                      <h3 className="font-bold text-orange-800 text-sm sm:text-base leading-tight">Rotina Diária Pendente</h3>
-                      <p className="text-xs text-orange-600 hidden sm:block mt-0.5">Registre as atividades e medições de hoje.</p>
-                  </div>
+      <Link 
+        to="/daily" 
+        className={`group border rounded-xl p-3 sm:p-4 flex items-center justify-between transition-colors animate-in slide-in-from-top-2 shadow-sm ${
+          dailyPending 
+            ? 'bg-orange-50 border-orange-200 hover:bg-orange-100' 
+            : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+        }`}
+      >
+          <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-full transition-colors shrink-0 group-hover:bg-white ${
+                dailyPending ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'
+              }`}>
+                  {dailyPending ? <AlertTriangle size={18} /> : <CheckCircle2 size={18} />}
               </div>
-              <div className="flex items-center gap-1 text-orange-700 text-xs sm:text-sm font-bold uppercase tracking-wider shrink-0 bg-orange-200/50 px-3 py-1.5 rounded-lg group-hover:bg-orange-200 transition-colors">
-                  <span className="hidden sm:inline">Iniciar</span>
-                  <ArrowRight size={16} />
+              <div>
+                  <h3 className={`font-bold text-sm sm:text-base leading-tight ${
+                    dailyPending ? 'text-orange-800' : 'text-blue-800'
+                  }`}>
+                    {dailyPending ? 'Rotina Diária Pendente' : 'Rotina Diária (Em Andamento)'}
+                  </h3>
+                  <p className={`text-xs hidden sm:block mt-0.5 ${
+                    dailyPending ? 'text-orange-600' : 'text-blue-600'
+                  }`}>
+                    {dailyPending ? 'Registre as atividades e medições de hoje.' : 'Continue registrando as medições e atividades.'}
+                  </p>
               </div>
-          </Link>
-      )}
+          </div>
+          <div className={`flex items-center gap-1 text-xs sm:text-sm font-bold uppercase tracking-wider shrink-0 px-3 py-1.5 rounded-lg transition-colors ${
+            dailyPending 
+              ? 'text-orange-700 bg-orange-200/50 group-hover:bg-orange-200' 
+              : 'text-blue-700 bg-blue-200/50 group-hover:bg-blue-200'
+          }`}>
+              <span className="hidden sm:inline">{dailyPending ? 'Iniciar' : 'Continuar'}</span>
+              <ArrowRight size={16} />
+          </div>
+      </Link>
 
       {/* Status Cards */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 rounded-lg shadow-sm border border-slate-200 gap-4 md:gap-0">

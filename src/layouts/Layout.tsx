@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, List, CheckSquare, BarChart3, Menu, LogOut, Bell, MessageSquare, User, X, Users, ClipboardCheck, CalendarCheck } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, List, CheckSquare, BarChart3, Menu, LogOut, Bell, MessageSquare, User, X, Users, ClipboardCheck, CalendarCheck, Monitor } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { NotificationDropdown } from '../components/common/NotificationDropdown';
@@ -24,6 +24,11 @@ export function Layout() {
     ] : []),
     { to: "/ranking", icon: BarChart3, label: "Rankings & Relatórios" },
     { to: "/profile", icon: User, label: "Meu Perfil" },
+    // Módulo TI
+    { to: "/ti/chamados", icon: Monitor, label: "Chamados TI" },
+    ...((user?.role === 'admin' || user?.role === 'leader') ? [
+      { to: "/ti/relatorios", icon: BarChart3, label: "Relatórios TI" }
+    ] : []),
   ];
 
   if (canManageUsers()) {

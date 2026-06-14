@@ -264,7 +264,7 @@ export function NewOrder() {
             <div className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle size={18} className="text-blue-600" />
-                <label className="text-sm font-bold text-slate-800 uppercase tracking-wide">Matriz de Prioridade (GUT)</label>
+                <label className="text-sm font-bold text-slate-800 uppercase tracking-wide">Matriz de Prioridade (GUT) <span className="text-slate-400 text-xs normal-case">(Opcional)</span></label>
               </div>
 
               {/* Gravidade */}
@@ -275,7 +275,7 @@ export function NewOrder() {
                     <button
                       key={`g-${val}`}
                       type="button"
-                      onClick={() => setFormData({...formData, gut_g: val})}
+                      onClick={() => setFormData({...formData, gut_g: formData.gut_g === val ? 0 : val})}
                       className={cn(
                         "flex-1 py-2 text-sm font-bold rounded-lg border-2 transition-all",
                         formData.gut_g === val 
@@ -298,7 +298,7 @@ export function NewOrder() {
                     <button
                       key={`u-${val}`}
                       type="button"
-                      onClick={() => setFormData({...formData, gut_u: val})}
+                      onClick={() => setFormData({...formData, gut_u: formData.gut_u === val ? 0 : val})}
                       className={cn(
                         "flex-1 py-2 text-sm font-bold rounded-lg border-2 transition-all",
                         formData.gut_u === val 
@@ -321,7 +321,7 @@ export function NewOrder() {
                     <button
                       key={`t-${val}`}
                       type="button"
-                      onClick={() => setFormData({...formData, gut_t: val})}
+                      onClick={() => setFormData({...formData, gut_t: formData.gut_t === val ? 0 : val})}
                       className={cn(
                         "flex-1 py-2 text-sm font-bold rounded-lg border-2 transition-all",
                         formData.gut_t === val 

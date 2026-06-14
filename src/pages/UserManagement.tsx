@@ -12,6 +12,7 @@ interface Profile {
   avatar_url?: string;
   sector?: string;
   approved?: boolean;
+  deleted?: boolean;
 }
 
 export function UserManagement() {
@@ -36,8 +37,11 @@ export function UserManagement() {
 
       if (error) throw error;
       
+      // Filter out soft-deleted users right away from the list
+      const activeUsers = (data || []).filter((u: any) => !u.deleted);
+
       // Sort: Pending users first
-      const sortedUsers = (data || []).sort((a: any, b: any) => {
+      const sortedUsers = activeUsers.sort((a: any, b: any) => {
          if (a.approved === false && b.approved !== false) return -1;
          if (a.approved !== false && b.approved === false) return 1;
          return 0;
@@ -98,6 +102,24 @@ export function UserManagement() {
     } catch (error: any) {
        console.error('Error revoking user:', error);
        alert('Erro ao bloquear usuário: ' + (error.message || 'Erro desconhecido'));
+    }
+  };
+
+  const handleArchiveUser = async (userId: string) => {
+    if (!confirm('Tem certeza que deseja excluir este usuário? Ele perderá o acesso e não aparecerá mais nesta lista, mas seu histórico (chamados) será preservado.')) return;
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ deleted: true, approved: false, role: 'user' }) // Soft delete
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      // Remove from UI list
+      setUsers(users.filter(u => u.id !== userId));
+    } catch (error: any) {
+       console.error('Error archiving user:', error);
+       alert('Erro ao excluir usuário: ' + (error.message || 'Erro desconhecido'));
     }
   };
 
@@ -293,12 +315,19 @@ export function UserManagement() {
                             {user.approved !== false && (
                               <button 
                                 onClick={() => handleRevokeUser(user.id)}
-                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" 
-                                title="Bloquear Acesso"
+                                className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors" 
+                                title="Bloquear Acesso Temporariamente"
                               >
                                 <Ban size={16} />
                               </button>
                             )}
+                            <button 
+                              onClick={() => handleArchiveUser(user.id)}
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" 
+                              title="Excluir Colaborador"
+                            >
+                              <X size={16} />
+                            </button>
                           </div>
                         )
                        )}

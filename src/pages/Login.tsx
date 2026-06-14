@@ -9,6 +9,7 @@ export function Login() {
   const [name, setName] = useState('');
   const [sector, setSector] = useState('');
   const [phone, setPhone] = useState('');
+  const [accessCode, setAccessCode] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   
   const [error, setError] = useState('');
@@ -36,6 +37,10 @@ export function Login() {
       }
 
       if (isSignUp) {
+        if (accessCode.trim().toUpperCase() !== 'ANCORADOURO') {
+          throw new Error('Código da empresa inválido. Solicite ao administrador.');
+        }
+
         await signUp(email, password, name, sector, phone);
         // Auto login or show success message? Supabase usually logs in automatically after sign up unless validation is required.
         // But if confirm email is on, it won't. I disabled confirm email implicitly by not configuring it, 
@@ -130,6 +135,23 @@ export function Login() {
                    placeholder="(00) 00000-0000"
                    value={phone}
                    onChange={e => setPhone(e.target.value)}
+                 />
+               </div>
+             </div>
+           )}
+
+           {isSignUp && (
+             <div className="space-y-2">
+               <label className="text-sm font-medium text-marinho">Código da Empresa</label>
+               <div className="relative">
+                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-marinho/40" size={20} />
+                 <input
+                   type="text"
+                   required
+                   className="w-full pl-10 pr-4 py-3 rounded-lg border border-marinho/20 focus:outline-none focus:ring-2 focus:ring-marinho/20 focus:border-marinho transition-all bg-areia/30 text-marinho placeholder-marinho/30 uppercase"
+                   placeholder="Código fornecido pelo RH"
+                   value={accessCode}
+                   onChange={e => setAccessCode(e.target.value)}
                  />
                </div>
              </div>

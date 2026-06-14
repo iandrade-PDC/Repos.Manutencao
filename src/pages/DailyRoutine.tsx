@@ -25,37 +25,80 @@ export function DailyRoutine() {
     // Form State - Dynamic for meters (Key: Meter Name, Value: Reading)
     const [meterReadings, setMeterReadings] = useState<Record<string, string>>({});
     
-    // Tasks State
-    const [tasks, setTasks] = useState({
-        trash: false,
-        fumace: false,
-        pool_clean: false,
-        pool_vacuum: false,
-        pool_chlorine: false
+    interface TaskState {
+        status: boolean;
+        user_name?: string;
+    }
+    const [tasks, setTasks] = useState<Record<string, TaskState>>({
+        trash: { status: false },
+        fumace: { status: false },
+        pool_clean: { status: false },
+        pool_vacuum: { status: false },
+        pool_chlorine: { status: false }
     });
 
     const [observation, setObservation] = useState('');
     const [showHistory, setShowHistory] = useState(false);
     const [readingHistory, setReadingHistory] = useState<Array<{date: string, location: string, value: number, type: string}>>([]);
+    const [taskHistory, setTaskHistory] = useState<Array<{date: string, label: string, user_name: string}>>([]);
 
     useEffect(() => {
         fetchMeters();
         loadTodayData();
     }, []);
 
-    const fetchReadingHistory = async () => {
+    const fetchHistory = async () => {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         const since = sevenDaysAgo.toISOString().split('T')[0];
 
-        const { data } = await supabase
+        // Fetch Readings
+        const { data: readings } = await supabase
             .from('daily_readings')
             .select('date, location, value, type')
             .gte('date', since)
             .order('date', { ascending: false })
             .order('location', { ascending: true });
 
-        if (data) setReadingHistory(data);
+        if (readings) setReadingHistory(readings);
+
+        // Fetch Tasks
+        const { data: tasks } = await supabase
+            .from('daily_tasks_log')
+            .select('*')
+            .gte('date', since)
+            .eq('status', true);
+
+        if (tasks && tasks.length > 0) {
+            const userIds = Array.from(new Set(tasks.map(t => t.user_id).filter(Boolean)));
+            const { data: profilesData } = await supabase
+                .from('profiles')
+                .select('id, full_name')
+                .in('id', userIds);
+            
+            const profileMap = Object.fromEntries((profilesData || []).map(p => [p.id, p.full_name]));
+            
+            const taskLabelMap: Record<string, string> = {
+                trash: 'Retirar Lixo',
+                fumace: 'Aplicar Fumacê',
+                insecticide: 'Aplicar Fumacê',
+                pool_clean: 'Piscina: Peneira',
+                pool_vacuum: 'Piscina: Aspirar',
+                pool_chlorine: 'Piscina: Cloro'
+            };
+
+            const mappedTasks = tasks
+                .filter(t => t.task_slug !== 'general_obs') // Skip observations for now
+                .map(t => ({
+                    date: t.date,
+                    label: taskLabelMap[t.task_slug] || t.task_slug,
+                    user_name: profileMap[t.user_id] || ''
+                }));
+            
+            setTaskHistory(mappedTasks);
+        } else {
+            setTaskHistory([]);
+        }
     };
 
     const fetchMeters = async () => {
@@ -100,15 +143,25 @@ export function DailyRoutine() {
                 .select('*')
                 .eq('date', today);
 
-            if (tasksData) {
+            if (tasksData && tasksData.length > 0) {
+                // Fetch profiles for users who completed tasks
+                const userIds = Array.from(new Set(tasksData.map(t => t.user_id).filter(Boolean)));
+                const { data: profilesData } = await supabase
+                    .from('profiles')
+                    .select('id, full_name')
+                    .in('id', userIds);
+                
+                const profileMap = Object.fromEntries((profilesData || []).map(p => [p.id, p.full_name]));
+
                 const newTasks = { ...tasks };
                 tasksData.forEach(t => {
-                    if (t.task_slug === 'insecticide') newTasks.fumace = t.status; // Legacy mapping
-                    if (t.task_slug === 'fumace') newTasks.fumace = t.status; 
-                    if (t.task_slug === 'trash') newTasks.trash = t.status;
-                    if (t.task_slug === 'pool_clean') newTasks.pool_clean = t.status;
-                    if (t.task_slug === 'pool_vacuum') newTasks.pool_vacuum = t.status;
-                    if (t.task_slug === 'pool_chlorine') newTasks.pool_chlorine = t.status;
+                    const userName = profileMap[t.user_id] || '';
+                    if (t.task_slug === 'insecticide') newTasks.fumace = { status: t.status, user_name: userName }; // Legacy mapping
+                    if (t.task_slug === 'fumace') newTasks.fumace = { status: t.status, user_name: userName }; 
+                    if (t.task_slug === 'trash') newTasks.trash = { status: t.status, user_name: userName };
+                    if (t.task_slug === 'pool_clean') newTasks.pool_clean = { status: t.status, user_name: userName };
+                    if (t.task_slug === 'pool_vacuum') newTasks.pool_vacuum = { status: t.status, user_name: userName };
+                    if (t.task_slug === 'pool_chlorine') newTasks.pool_chlorine = { status: t.status, user_name: userName };
                     
                     if (t.task_slug === 'general_obs') setObservation(t.observation || '');
                 });
@@ -141,20 +194,36 @@ export function DailyRoutine() {
         if (!user) return;
         
         // Optimistic UI update
-        setTasks(prev => ({ ...prev, [slug]: checked }));
+        setTasks(prev => ({ 
+            ...prev, 
+            [slug]: { status: checked, user_name: checked ? user.name : undefined } 
+        }));
         
         const today = new Date().toISOString().split('T')[0];
         try {
-            const { error } = await supabase
+            // Check if exists first to avoid conflict errors
+            const { data: existing } = await supabase
                 .from('daily_tasks_log')
-                .upsert({ 
-                    date: today, 
-                    task_slug: slug, 
-                    status: checked, 
-                    user_id: user.id 
-                }, { onConflict: 'date,task_slug' });
-                
-            if (error) throw error;
+                .select('id')
+                .eq('date', today)
+                .eq('task_slug', slug)
+                .maybeSingle();
+
+            let opError;
+            if (existing) {
+                const { error } = await supabase
+                    .from('daily_tasks_log')
+                    .update({ status: checked, user_id: user.id })
+                    .eq('id', existing.id);
+                opError = error;
+            } else {
+                const { error } = await supabase
+                    .from('daily_tasks_log')
+                    .insert({ date: today, task_slug: slug, status: checked, user_id: user.id });
+                opError = error;
+            }
+
+            if (opError) throw opError;
             
             // Show brief success indicator
             setSaved(true);
@@ -162,7 +231,11 @@ export function DailyRoutine() {
         } catch (error) {
             console.error('Error saving task:', error);
             // Revert on error
-            setTasks(prev => ({ ...prev, [slug]: !checked }));
+            setTasks(prev => ({ 
+                ...prev, 
+                [slug]: { status: !checked, user_name: !checked ? user.name : undefined } 
+            }));
+            alert('Não foi possível salvar a tarefa: ' + (error as Error).message);
         }
     };
 
@@ -203,7 +276,7 @@ export function DailyRoutine() {
 
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
-            if (showHistory) fetchReadingHistory();
+            if (showHistory) fetchHistory();
         } catch (error) {
             console.error(`Error saving ${type} routine:`, error);
             alert(`Erro ao salvar leituras de ${type === 'water' ? 'água' : 'gás'}.`);
@@ -362,28 +435,38 @@ export function DailyRoutine() {
                         </div>
                         <div className="p-2 space-y-1">
                             {/* Lixo */}
-                            <label className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${tasks.trash ? 'bg-green-50' : 'hover:bg-slate-50'}`}>
-                                <input type="checkbox" className="w-5 h-5 rounded text-green-600 focus:ring-green-500 border-slate-300"
-                                    checked={tasks.trash}
-                                    onChange={e => handleTaskToggle('trash', e.target.checked)}
-                                />
-                                <div className="flex items-center gap-2">
-                                    <Trash2 size={18} className={tasks.trash ? 'text-green-600' : 'text-slate-400'} />
-                                    <span className={`text-sm font-medium ${tasks.trash ? 'text-green-900' : 'text-slate-600'}`}>Retirar o Lixo</span>
-                                </div>
-                            </label>
+                            <div className={`flex flex-col p-3 rounded-xl cursor-pointer transition-all ${tasks.trash.status ? 'bg-green-50' : 'hover:bg-slate-50'}`}>
+                                <label className="flex items-center gap-3 w-full cursor-pointer">
+                                    <input type="checkbox" className="w-5 h-5 rounded text-green-600 focus:ring-green-500 border-slate-300"
+                                        checked={tasks.trash.status}
+                                        onChange={e => handleTaskToggle('trash', e.target.checked)}
+                                    />
+                                    <div className="flex items-center gap-2">
+                                        <Trash2 size={18} className={tasks.trash.status ? 'text-green-600' : 'text-slate-400'} />
+                                        <span className={`text-sm font-medium ${tasks.trash.status ? 'text-green-900' : 'text-slate-600'}`}>Retirar o Lixo</span>
+                                    </div>
+                                </label>
+                                {tasks.trash.status && tasks.trash.user_name && (
+                                    <div className="text-[10px] text-green-700 mt-1.5 ml-8 font-medium">Marcado por: {tasks.trash.user_name}</div>
+                                )}
+                            </div>
 
                             {/* Fumacê */}
-                            <label className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${tasks.fumace ? 'bg-green-50' : 'hover:bg-slate-50'}`}>
-                                <input type="checkbox" className="w-5 h-5 rounded text-green-600 focus:ring-green-500 border-slate-300"
-                                    checked={tasks.fumace}
-                                    onChange={e => handleTaskToggle('fumace', e.target.checked)}
-                                />
-                                <div className="flex items-center gap-2">
-                                    <Bug size={18} className={tasks.fumace ? 'text-green-600' : 'text-slate-400'} />
-                                    <span className={`text-sm font-medium ${tasks.fumace ? 'text-green-900' : 'text-slate-600'}`}>Aplicar Fumacê</span>
-                                </div>
-                            </label>
+                            <div className={`flex flex-col p-3 rounded-xl cursor-pointer transition-all ${tasks.fumace.status ? 'bg-green-50' : 'hover:bg-slate-50'}`}>
+                                <label className="flex items-center gap-3 w-full cursor-pointer">
+                                    <input type="checkbox" className="w-5 h-5 rounded text-green-600 focus:ring-green-500 border-slate-300"
+                                        checked={tasks.fumace.status}
+                                        onChange={e => handleTaskToggle('fumace', e.target.checked)}
+                                    />
+                                    <div className="flex items-center gap-2">
+                                        <Bug size={18} className={tasks.fumace.status ? 'text-green-600' : 'text-slate-400'} />
+                                        <span className={`text-sm font-medium ${tasks.fumace.status ? 'text-green-900' : 'text-slate-600'}`}>Aplicar Fumacê</span>
+                                    </div>
+                                </label>
+                                {tasks.fumace.status && tasks.fumace.user_name && (
+                                    <div className="text-[10px] text-green-700 mt-1.5 ml-8 font-medium">Marcado por: {tasks.fumace.user_name}</div>
+                                )}
+                            </div>
 
                              {/* Piscina */}
                              <div className="pt-2 mt-2 border-t border-slate-100">
@@ -393,13 +476,18 @@ export function DailyRoutine() {
                                     { key: 'pool_vacuum', label: 'Aspirar Fundo' },
                                     { key: 'pool_chlorine', label: 'Aplicação de Cloro' }
                                 ].map((item) => (
-                                    <label key={item.key} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${tasks[item.key as keyof typeof tasks] ? 'bg-blue-50' : 'hover:bg-slate-50'}`}>
-                                        <input type="checkbox" className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
-                                            checked={tasks[item.key as keyof typeof tasks]}
-                                            onChange={(e) => handleTaskToggle(item.key, e.target.checked)}
-                                        />
-                                        <span className={`text-sm font-medium ${tasks[item.key as keyof typeof tasks] ? 'text-blue-900' : 'text-slate-600'}`}>{item.label}</span>
-                                    </label>
+                                    <div key={item.key} className={`flex flex-col p-3 rounded-xl cursor-pointer transition-all ${tasks[item.key].status ? 'bg-blue-50' : 'hover:bg-slate-50'}`}>
+                                        <label className="flex items-center gap-3 w-full cursor-pointer">
+                                            <input type="checkbox" className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
+                                                checked={tasks[item.key].status}
+                                                onChange={(e) => handleTaskToggle(item.key, e.target.checked)}
+                                            />
+                                            <span className={`text-sm font-medium ${tasks[item.key].status ? 'text-blue-900' : 'text-slate-600'}`}>{item.label}</span>
+                                        </label>
+                                        {tasks[item.key].status && tasks[item.key].user_name && (
+                                            <div className="text-[10px] text-blue-700 mt-1.5 ml-8 font-medium">Marcado por: {tasks[item.key].user_name}</div>
+                                        )}
+                                    </div>
                                 ))}
                              </div>
                         </div>
@@ -427,57 +515,93 @@ export function DailyRoutine() {
                 </div>
             </div>
             
-            {/* HISTÓRICO DE LEITURAS */}
+            {/* HISTÓRICO GERAL */}
             <div className="px-4 md:px-0">
                 <button
-                    onClick={() => { setShowHistory(!showHistory); if (!showHistory) fetchReadingHistory(); }}
+                    onClick={() => { setShowHistory(!showHistory); if (!showHistory) fetchHistory(); }}
                     className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-left hover:bg-slate-50 transition-colors"
                 >
                     <div className="flex items-center gap-2 font-semibold text-slate-700">
                         <History size={18} className="text-slate-400" />
-                        Histórico de Leituras (7 dias)
+                        Histórico Geral (7 dias)
                     </div>
                     {showHistory ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
                 </button>
 
                 {showHistory && (
                     <div className="mt-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                        {readingHistory.length === 0 ? (
-                            <p className="text-sm text-slate-400 text-center py-8">Nenhuma leitura registrada nos últimos 7 dias.</p>
+                        {readingHistory.length === 0 && taskHistory.length === 0 ? (
+                            <p className="text-sm text-slate-400 text-center py-8">Nenhum registro encontrado nos últimos 7 dias.</p>
                         ) : (
                             (() => {
                                 // Group by date
-                                const byDate: Record<string, typeof readingHistory> = {};
+                                const byDate: Record<string, { readings: typeof readingHistory, tasks: typeof taskHistory }> = {};
+                                
                                 readingHistory.forEach(r => {
-                                    if (!byDate[r.date]) byDate[r.date] = [];
-                                    byDate[r.date].push(r);
+                                    if (!byDate[r.date]) byDate[r.date] = { readings: [], tasks: [] };
+                                    byDate[r.date].readings.push(r);
                                 });
-                                return Object.entries(byDate).map(([date, readings]) => (
-                                    <div key={date} className="border-b border-slate-50 last:border-0">
-                                        <div className="px-4 py-2 bg-slate-50 flex items-center gap-2">
-                                            <CalendarCheck size={13} className="text-slate-400" />
-                                            <span className="text-xs font-bold text-slate-500">
-                                                {new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })}
-                                            </span>
-                                        </div>
-                                        <div className="px-4 py-2 grid grid-cols-2 md:grid-cols-4 gap-2">
-                                            {readings.map((r, i) => (
-                                                <div key={i} className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
-                                                    <div className="flex items-center gap-1.5">
-                                                        {r.type === 'gas'
-                                                            ? <Flame size={12} className="text-orange-500 shrink-0" />
-                                                            : <Droplets size={12} className="text-blue-500 shrink-0" />
-                                                        }
-                                                        <span className="text-xs text-slate-600 truncate max-w-[80px]">{r.location}</span>
+                                
+                                taskHistory.forEach(t => {
+                                    if (!byDate[t.date]) byDate[t.date] = { readings: [], tasks: [] };
+                                    byDate[t.date].tasks.push(t);
+                                });
+
+                                // Sort dates descending
+                                const sortedDates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+
+                                return sortedDates.map(date => {
+                                    const { readings, tasks } = byDate[date];
+                                    return (
+                                        <div key={date} className="border-b border-slate-50 last:border-0">
+                                            <div className="px-4 py-2 bg-slate-50 flex items-center gap-2 border-b border-slate-100">
+                                                <CalendarCheck size={13} className="text-slate-400" />
+                                                <span className="text-xs font-bold text-slate-500">
+                                                    {new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+                                                </span>
+                                            </div>
+                                            
+                                            {/* Tarefas Section */}
+                                            {tasks.length > 0 && (
+                                                <div className="px-4 py-3 border-b border-slate-50 last:border-0">
+                                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Tarefas Concluídas</div>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {tasks.map((t, i) => (
+                                                            <div key={`t-${i}`} className="flex items-center gap-1.5 bg-green-50 text-green-700 px-2 py-1 rounded-md text-xs">
+                                                                <CheckCircle2 size={12} className="text-green-500" />
+                                                                <span className="font-semibold">{t.label}</span>
+                                                                {t.user_name && <span className="text-green-600/70 opacity-80 text-[10px]">({t.user_name.split(' ')[0]})</span>}
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                    <span className="text-xs font-bold text-slate-800 ml-2 shrink-0">
-                                                        {r.value} {r.type === 'gas' ? 'kg' : 'm³'}
-                                                    </span>
                                                 </div>
-                                            ))}
+                                            )}
+
+                                            {/* Leituras Section */}
+                                            {readings.length > 0 && (
+                                                <div className="px-4 py-3">
+                                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Leituras Registradas</div>
+                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                                        {readings.map((r, i) => (
+                                                            <div key={`r-${i}`} className="flex items-center justify-between bg-white border border-slate-100 rounded-lg px-2 py-1.5 shadow-sm">
+                                                                <div className="flex items-center gap-1.5 min-w-0">
+                                                                    {r.type === 'gas'
+                                                                        ? <Flame size={12} className="text-orange-500 shrink-0" />
+                                                                        : <Droplets size={12} className="text-blue-500 shrink-0" />
+                                                                    }
+                                                                    <span className="text-[11px] text-slate-600 truncate">{r.location}</span>
+                                                                </div>
+                                                                <span className="text-[11px] font-bold text-slate-800 ml-2 shrink-0">
+                                                                    {r.value} {r.type === 'gas' ? 'kg' : 'm³'}
+                                                                </span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
-                                ));
+                                    );
+                                });
                             })()
                         )}
                     </div>

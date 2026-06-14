@@ -23,6 +23,11 @@ import { ChecklistBuilder } from './pages/checklists/ChecklistBuilder';
 import { ChecklistHistory } from './pages/checklists/ChecklistHistory';
 import { DailyRoutine } from './pages/DailyRoutine';
 
+// Módulo TI
+import { TiChamadosList } from './pages/ti/TiChamadosList';
+import { TiNovoChamado } from './pages/ti/TiNovoChamado';
+import { TiChamadoDetails } from './pages/ti/TiChamadoDetails';
+import { TiRelatorios } from './pages/ti/TiRelatorios';
 function App() {
   return (
     <AuthProvider>
@@ -52,6 +57,12 @@ function App() {
                   <Route path="/checklists/edit/:id" element={<ChecklistBuilder />} />
                   <Route path="/checklists/new" element={<ChecklistExecution />} />
                   <Route path="/checklists/:id" element={<ChecklistExecution />} />
+                  
+                  {/* Rotas TI */}
+                  <Route path="/ti/chamados" element={<TiChamadosList />} />
+                  <Route path="/ti/novo" element={<TiNovoChamado />} />
+                  <Route path="/ti/chamados/:id" element={<TiChamadoDetails />} />
+                  <Route path="/ti/relatorios" element={<TiRelatorios />} />
                 </Route>
               </Route>
             </Routes>
