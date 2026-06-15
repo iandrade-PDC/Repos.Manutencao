@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Search, Filter, AlertCircle, CheckCircle2, Clock, Eye,
+  Search, AlertCircle, CheckCircle2, Clock, Eye,
   ChevronLeft, ChevronRight, Plus, Monitor, Pause, XCircle,
   Loader2
 } from 'lucide-react';

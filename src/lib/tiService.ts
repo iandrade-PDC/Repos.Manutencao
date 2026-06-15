@@ -437,8 +437,8 @@ export async function gerarRelatorio(
     // --- Por categoria ---
     const categoriaMap = new Map<string, number>();
     lista.forEach((c) => {
-      const catNome =
-        (c.ti_categorias as { nome: string } | null)?.nome || 'Sem categoria';
+      const catObj = c.ti_categorias as any;
+      const catNome = (Array.isArray(catObj) ? catObj[0]?.nome : catObj?.nome) || 'Sem categoria';
       categoriaMap.set(catNome, (categoriaMap.get(catNome) || 0) + 1);
     });
     const por_categoria: TiContagemItem[] = Array.from(categoriaMap.entries()).map(

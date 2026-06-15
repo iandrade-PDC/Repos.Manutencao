@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { TrendingUp, User, MapPin, Calendar, FileText, Clock, Trophy } from 'lucide-react';
+import { TrendingUp, User, MapPin, Calendar, FileText, Trophy } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useOrders } from '../contexts/OrdersContext';
 import { startOfMonth } from 'date-fns';
